@@ -1,0 +1,21 @@
+import { env, tagWithScope } from "PartyBus"
+
+
+
+export TAGS = {
+  vfile: tagWithScope("spirit", ["vfile"]),
+  rule: tagWithScope("spirit", ["rule"]),
+  validator: tagWithScope("spirit", ["rule", "validator"]),
+  transformer: tagWithScope("spirit", ["rule", "transformer"]),
+  main: tagWithScope("spirit", ["main"]),
+  line: tagWithScope("spirit", ["line"]),
+}
+
+export log = {
+  vfile: env(TAGS.vfile),
+  rule: env(TAGS.rule),
+  validator: env(TAGS.validator),
+  transformer: env(TAGS.transformer),
+  main: env(TAGS.main),
+  line: env(TAGS.line),
+}

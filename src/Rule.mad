@@ -1,0 +1,41 @@
+import Fn from "Function"
+
+
+
+export type BodyValidator a = BodyValidator(a -> String -> Boolean)
+export type LineValidator a = LineValidator(a -> Integer -> String -> Boolean)
+export type BodyTransformer a = BodyTransformer(a -> String -> String)
+export type LineTransformer a = LineTransformer(a -> Integer -> String -> String)
+
+// a rule consists of validations
+// and transformers
+// either can apply to the raw body
+// or line by line
+// export type Rule a = Rule(List (Validator a), List (Transformer a))
+
+alias Id = String
+
+export type Rule a
+  = BodyRule(Id, List (BodyValidator a), List (BodyTransformer a))
+  | LineRule(Id, List (LineValidator a), List (LineTransformer a))
+
+export isBodyRule = where {
+  BodyRule(_, _, _) =>
+    true
+
+  _ =>
+    false
+}
+export isLineRule = Fn.complement(isBodyRule)
+
+validateLine :: a -> LineValidator a -> Integer -> String -> Boolean
+export validateLine = (meta, check, lineNum, currentLine) => where(check) {
+  LineValidator(runner) =>
+    runner(meta, lineNum, currentLine)
+}
+
+transformLine :: a -> LineTransformer a -> Integer -> String -> String
+export transformLine = (meta, run, lineNum, currentLine) => where(run) {
+  LineTransformer(runner) =>
+    runner(meta, lineNum, currentLine)
+}

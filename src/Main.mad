@@ -1,0 +1,63 @@
+import type { VirtualFile } from "@/VFile"
+
+import Fn from "Function"
+import IO from "IO"
+import List from "List"
+import String from "String"
+import Wish from "Wish"
+
+import { log } from "@/Log"
+import Rule from "@/Rule"
+import VFile from "@/VFile"
+
+
+
+fillfull = (badMsg, goodMsg, wish) => Wish.fulfill(
+  (bad) => {
+    IO.pTrace(badMsg, bad)
+  },
+  (good) => {
+    IO.pTrace(goodMsg, good)
+  },
+  wish,
+)
+
+
+SOURCE = "./README.md"
+
+
+main = () => {
+  myVFile = VFile.vfileWithState(
+    SOURCE,
+    [
+      Rule.BodyRule(
+        "ensure-header",
+        [
+          Rule.BodyValidator(
+            (meta, body) => {
+              log.main("<><>", body)
+              hasHash = String.contains("#", body)
+              log.main("checking", hasHash)
+              return hasHash
+            },
+          ),
+        ],
+        [],
+      ),
+      Rule.LineRule(
+        "ensure-headmarker",
+        [
+          Rule.LineValidator(
+            (meta, lineNum, line) => IO.pTrace(
+              "checking line for headmarker!",
+              !Fn.equals("---", line),
+            ),
+          ),
+        ],
+        [],
+      ),
+    ],
+    { hasHeadmarker: false, hasMadmarker: false },
+  )
+  fillfull("Barf!", "Yay!", myVFile)
+}

@@ -1,0 +1,116 @@
+import type { Maybe } from "Maybe"
+import type { Wish } from "Wish"
+
+import type { VFileError } from "@/Errors"
+import type { BodyTransformer, BodyValidator, LineTransformer, LineValidator, Rule } from "@/Rule"
+
+import File from "File"
+import Path from "FilePath"
+import Fn from "Function"
+import IO from "IO"
+import List from "List"
+import { Just, Nothing } from "Maybe"
+import String from "String"
+import Wish from "Wish"
+
+import Errors from "@/Errors"
+import Line from "@/Line"
+import Rule from "@/Rule"
+
+
+
+// a virtual file represents:
+
+// - a file's path 
+// - a file's raw body
+// - a state which is produced by transforming path and the raw body
+
+type ConcreteFile state
+  = ConcreteFile(
+    // source path
+    String,
+    // source string
+    String,
+    // the metadata record
+    state,
+  )
+
+
+
+
+
+// the eventual set of helpers will likely be more complicated
+alias Internal = String
+
+forceVFileError = Wish.mapRej((_) => Errors.InvalidSource)
+
+
+// the processor takes a source path string and produces a concrete file instance
+export alias Processor state = String -> ConcreteFile state
+
+// the renderer takes a concrete file and produces an output
+export alias Renderer state = ConcreteFile state -> String
+
+export type FileTemplate a
+  = FileTemplate(
+    // processor
+    Processor a,
+    // renderer
+    Renderer a,
+  )
+
+export type VirtualFile a
+  = VFile(
+    // source
+    String,
+    // rules
+    List (Rule a),
+  )
+
+export bodyToNumberedLines = pipe(
+  String.lines,
+  List.mapWithIndex((x, i) => #[i, x]),
+)
+
+
+runBodyValidation = (state, body, vals) => pipe(
+  map(where { Rule.BodyValidator(fn) => fn }),
+  List.reduce((pass, checkWrap) => pass && checkWrap(state, body), true),
+)(vals)
+
+bodyChecker :: a -> List (Rule a) -> Wish VFileError String -> Wish VFileError #[Boolean, String]
+bodyChecker = (state, rules) => map(
+  (body) => pipe(
+    List.all(
+      where {
+        Rule.BodyRule(_, vals, _) =>
+          runBodyValidation(state, body, vals)
+
+        _ =>
+          true
+      },
+    ),
+    (valid) => #[valid, body],
+  )(rules),
+)
+
+modBod = (rules, state, body) => pipe(
+  bodyToNumberedLines,
+  List.reduce((agg, lineTuple) => List.append(Line.processRules(rules, state, lineTuple), agg), []),
+)(body)
+
+export vfileWithState = (src, rules, state) => pipe(
+  File.read,
+  forceVFileError,
+  bodyChecker(state, rules),
+  chain(
+    where {
+      #[valid, body] =>
+        if (valid) {
+          Wish.good(ConcreteFile(src, body, modBod(rules, state, body)))
+        } else {
+          Wish.bad(Errors.InvalidShape)
+        }
+    },
+  ),
+)(src)
