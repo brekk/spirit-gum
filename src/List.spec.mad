@@ -1,0 +1,13 @@
+import List from "List"
+
+import { report } from "Study"
+
+import { accumulate } from "@/List"
+
+
+
+report(
+  accumulate($, List.range(0, 10)),
+  "accumulate",
+  [#[(x) => x * 2, [0, 2, 4, 6, 8, 10, 12, 14, 16, 18]]],
+)

@@ -25,7 +25,7 @@ export type VFileLine = InvalidLine(Integer, VFileError) | ValidLine(Integer, St
 // valid line: line number, raw
 
 getLineNumber :: VFileLine -> Integer
-getLineNumber = where {
+export getLineNumber = where {
   InvalidLine(i, _) =>
     i
 
@@ -40,7 +40,7 @@ export hasNoRemainingLineRules = pipe(
 )
 
 transformLines :: a -> Integer -> String -> List (Transformer a) -> String
-transformLines = (meta, index, raw, trs) => {
+export transformLines = (meta, index, raw, trs) => {
   helper = (current, steps) => where(steps) {
     [] =>
       current
@@ -84,15 +84,12 @@ recursivelyProcessRules = (index, line, state, loopState, rules) => if (
             valid = loopState.valid && lineValid
             failReason = !lineValid ? Just(Errors.DynamicError(id, index)) : loopState.failReason
             newLine = valid ? transformLines(state, index, line, transformers) : line
-            return log.lineRLine(
-              "iter: " ++ id ++ " :: " ++ show(index),
-              recursivelyProcessRules(
-                index,
-                newLine,
-                state,
-                { ...loopState, valid, failReason },
-                rest,
-              ),
+            return recursivelyProcessRules(
+              index,
+              newLine,
+              state,
+              { ...loopState, valid, failReason },
+              rest,
             )
           }
 
