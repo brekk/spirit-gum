@@ -60,13 +60,13 @@ recursivelyProcessRules = (rules, index, line, state, loopState) => if (
 
     [rule, ...rest] =>
       where(rule) {
-        Rule.BodyRule(_, _, _) =>
+        Rule.BodyRule(_, _, _, _) =>
           // skip body rules, they get processed upstream
           recursivelyProcessRules(rest, index, line, state, loopState)
 
-        Rule.LineRule(id, validators, transformers) =>
+        Rule.LineRule(id, validators, transformers, _) =>
           do {
-            lineValid = List.all(Rule.validateLine(state, $, index, line), validators)
+            lineValid = List.all(Rule.validateLine(state, index, line), validators)
             valid = loopState.valid && lineValid
             failReason = !lineValid ? Just(Errors.DynamicError(id, index)) : loopState.failReason
             // next we should actually apply a transform

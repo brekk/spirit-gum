@@ -43,6 +43,7 @@ main = () => {
           ),
         ],
         [],
+        [],
       ),
       Rule.LineRule(
         "ensure-headmarker",
@@ -51,6 +52,7 @@ main = () => {
             (meta, lineNum, line) => IO.pTrace("   → headmarker", !Fn.equals("---", line)),
           ),
         ],
+        [],
         [],
       ),
     ],

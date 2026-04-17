@@ -1,0 +1,14 @@
+import { append } from "List"
+
+
+
+export accumulate = (fn, list) => {
+  stepper = (out, input) => where(input) {
+    [] =>
+      out
+
+    [a, ...z] =>
+      stepper(append(fn(a), out), z)
+  }
+  return stepper([], list)
+}

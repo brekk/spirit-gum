@@ -16,6 +16,7 @@ import Wish from "Wish"
 
 import Errors from "@/Errors"
 import Line from "@/Line"
+import { accumulate } from "@/List"
 import Rule from "@/Rule"
 
 
@@ -35,9 +36,6 @@ type ConcreteFile state
     // the metadata record
     state,
   )
-
-// the eventual set of helpers will likely be more complicated
-alias Internal = String
 
 forceVFileError = Wish.mapRej((_) => Errors.InvalidSource)
 
@@ -83,35 +81,22 @@ export runBodyValidation = (state, body, vals) => {
   )(vals)
 }
 
-bodyChecker :: a -> List (Rule a) -> Wish VFileError String -> Wish VFileError #[Boolean, String]
-bodyChecker = (state, rules) => map(
-  (body) => pipe(
-    List.all(
-      where {
-        Rule.BodyRule(_, vals, _) =>
-          runBodyValidation(state, body, vals)
+validateBody :: a -> List (Rule a) -> String -> #[Boolean, String]
+export validateBody = (state, rules, body) => pipe(
+  List.all(
+    where {
+      Rule.BodyRule(_, vals, _, _) =>
+        runBodyValidation(state, body, vals)
 
-        _ =>
-          true
-      },
-    ),
-    (valid) => #[valid, body],
-  )(rules),
-)
-
-accumulate = (fn, list) => {
-  stepper = (input, out) => where(input) {
-    [] =>
-      out
-
-    [a, ...z] =>
-      stepper(z, [...out, fn(a)])
-  }
-  return stepper(list, [])
-}
+      _ =>
+        true
+    },
+  ),
+  (valid) => #[valid, body],
+)(rules)
 
 modifyBodyByRules :: List (Rule a) -> a -> String -> List VFileLine
-modifyBodyByRules = (rules, state, body) => pipe(
+export modifyBodyByRules = (rules, state, body) => pipe(
   bodyToNumberedLines,
   accumulate(Line.processRules(rules, state)),
 )(body)
@@ -120,7 +105,7 @@ vfileWithState :: String -> List (Rule a) -> a -> Wish VFileError (ConcreteFile 
 export vfileWithState = (src, rules, state) => pipe(
   File.read,
   forceVFileError,
-  bodyChecker(state, rules),
+  map(validateBody(state, rules)),
   chain(
     where {
       #[valid, body] =>
