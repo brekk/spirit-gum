@@ -23,7 +23,8 @@ fillfull = (badMsg, goodMsg, wish) => Wish.fulfill(
 )
 
 
-SOURCE = "./README.md"
+SOURCE = "./src/Log.mad"
+INITIAL_STATE = { opinionated: false }
 
 
 main = () => {
@@ -33,32 +34,23 @@ main = () => {
       Rule.Rule(
         Rule.BodyRule,
         false,
-        "ensure-header",
+        "party-bus/opinionated-log-pattern",
         [
           Rule.BodyValidator(
             (meta, body) => {
-              log.main("<><>", body)
-              hasHash = String.contains("#", body)
-              log.main("checking", hasHash)
-              return hasHash
+              hasBase = String.contains("export BASE", body)
+              hasTags = String.contains("export TAGS", body)
+              hasLog = String.contains("export log", body)
+              tagALog = hasBase && hasTags && hasLog
+              log.main("checking", tagALog)
+              return tagALog
             },
           ),
         ],
-        [Rule.BodyStateTransformer((meta, numBody) => ({ ...meta, hasHeadmarker: true }))],
-      ),
-      Rule.Rule(
-        Rule.LineRule,
-        false,
-        "ensure-headmarker",
-        [],
-        [
-          Rule.LineTransformer(
-            (meta, lineNum, currentLine) => String.replace("madlib", "_madlib_", currentLine),
-          ),
-        ],
+        [Rule.BodyStateTransformer((meta, numBody) => ({ ...meta, opinionated: true }))],
       ),
     ],
-    { hasHeadmarker: false, hasMadmarker: false },
+    INITIAL_STATE,
   )
   fillfull("Barf!", "Yay!", myVFile)
 }
