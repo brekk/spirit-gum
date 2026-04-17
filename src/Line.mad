@@ -102,10 +102,10 @@ recursivelyProcessRules = (rules, index, line, state, loopState) => {
   } else {
     where(rules) {
       [] =>
-        log.lineR("go", recursivelyProcessRules([], index, line, state, loopState))
+        log.lineR("this is the bug", recursivelyProcessRules([], index, line, state, loopState))
 
       [rule, ...rest] =>
-        log.lineR("recur", applyAgain(rule, rest))
+        log.lineR("again", applyAgain(rule, rest))
     }
   }
 }
