@@ -59,14 +59,17 @@ transformLines = (meta, index, raw, trs) => {
 
 recursivelyProcessRules :: List (Rule a) -> Integer -> String -> a -> LoopState -> VFileLine
 recursivelyProcessRules = (rules, index, line, state, loopState) => {
+  log.line("<><>", #[rules, index, line, state, loopState])
   applyAgain = (rule, rest) => where(rule) {
     Rule.Rule(Rule.LineRule, fixable, id, validators, transformers, _) =>
       do {
         lineValid = List.all(Rule.validateLine(state, index, line), validators)
+        log.line("@<> " ++ id ++ ":", lineValid)
         valid = loopState.valid && lineValid
         failReason = !lineValid ? Just(Errors.DynamicError(id, index)) : loopState.failReason
         // transform = (meta, index, raw, trs) => {
         newLine = valid ? transformLines(state, index, line, transformers) : line
+        log.lineR("pre recur", #[valid, failReason, newLine])
         // next we should actually apply a transform
         // we also need to handle passing along state
         return recursivelyProcessRules(
@@ -79,27 +82,30 @@ recursivelyProcessRules = (rules, index, line, state, loopState) => {
       }
 
     _ =>
-      // skip body rules, they get processed upstream
-      recursivelyProcessRules(rest, index, line, state, loopState)
+      log.lineR(
+        "skipped",
+        // skip body rules, they get processed upstream
+        recursivelyProcessRules(rest, index, line, state, loopState),
+      )
   }
   return if (loopState.done || hasNoRemainingLineRules(rules)) {
     where(loopState.failReason) {
       Just(whyFail) =>
-        log.line(
+        log.lineR(
           "fail " ++ show(index),
           (loopState.valid ? ValidLine(index, line) : InvalidLine(index, whyFail)),
         )
 
       _ =>
-        ValidLine(index, line)
+        log.lineR("pass " ++ show(index), ValidLine(index, line))
     }
   } else {
     where(rules) {
       [] =>
-        recursivelyProcessRules([], index, line, state, loopState)
+        log.lineR("go", recursivelyProcessRules([], index, line, state, loopState))
 
       [rule, ...rest] =>
-        applyAgain(rule, rest)
+        log.lineR("recur", applyAgain(rule, rest))
     }
   }
 }

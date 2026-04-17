@@ -6,20 +6,24 @@ export TAGS = {
   vfile: tagWithScope("spirit", ["vfile"]),
   vfileV: tagWithScope("spirit", ["vfile", "validation"]),
   vfileT: tagWithScope("spirit", ["vfile", "transformer"]),
+  vfileR: tagWithScope("spirit", ["vfile", "rule"]),
   rule: tagWithScope("spirit", ["rule"]),
   validator: tagWithScope("spirit", ["rule", "validator"]),
   transformer: tagWithScope("spirit", ["rule", "transformer"]),
   main: tagWithScope("spirit", ["main"]),
   line: tagWithScope("spirit", ["line"]),
+  lineR: tagWithScope("spirit", ["line", "rule"]),
 }
 
 export log = {
   vfile: env(TAGS.vfile),
   vfileV: env(TAGS.vfileV),
   vfileT: env(TAGS.vfileT),
+  vfileR: env(TAGS.vfileR),
   rule: env(TAGS.rule),
   validator: env(TAGS.validator),
   transformer: env(TAGS.transformer),
   main: env(TAGS.main),
   line: env(TAGS.line),
+  lineR: env(TAGS.lineR),
 }
