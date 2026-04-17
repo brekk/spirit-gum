@@ -3,7 +3,7 @@ import type { Wish } from "Wish"
 
 import type { VFileError } from "@/Errors"
 import type { VFileLine } from "@/Line"
-import type { Rule, StateTransformer, Transformer, Validator } from "@/Rule"
+import type { Rule, Transformer, Validator } from "@/Rule"
 
 import File from "File"
 import Path from "FilePath"
@@ -95,7 +95,7 @@ validateBody :: a -> List (Rule a) -> String -> #[Boolean, String]
 export validateBody = (state, rules, body) => pipe(
   List.all(
     where {
-      Rule.Rule(Rule.BodyRule, fixable, id, vals, trans, stateTrans) =>
+      Rule.Rule(Rule.BodyRule, fixable, id, vals, trans) =>
         runBodyValidation(state, body, vals)
 
       _ =>
@@ -153,7 +153,7 @@ export modifyBodyByRules = (rules, state, body) => {
     map(log.vfile("body")),
     chain(
       where {
-        Rule.Rule(Rule.BodyRule, fixable, id, validators, trans, stateTrans) =>
+        Rule.Rule(Rule.BodyRule, fixable, id, validators, trans) =>
           trans
 
         _ =>

@@ -31,6 +31,8 @@ export isLineValidator = Fn.complement(isBodyValidator)
 export type Transformer a
   = BodyTransformer(a -> List NumberedLine -> List NumberedLine)
   | LineTransformer(a -> Integer -> String -> String)
+  | BodyStateTransformer(a -> List NumberedLine -> a)
+  | LineStateTransformer(a -> Integer -> String -> a)
 
 isBodyTransformer :: Transformer a -> Boolean
 export isBodyTransformer = where {
@@ -40,13 +42,15 @@ export isBodyTransformer = where {
   _ =>
     false
 }
-export isLineTransformer = Fn.complement(isBodyTransformer)
+export isLineTransformer = where {
+  LineTransformer(_) =>
+    true
 
-export type StateTransformer a
-  = BodyStateTransformer(a -> List NumberedLine -> a)
-  | LineStateTransformer(a -> Integer -> String -> a)
+  _ =>
+    false
+}
 
-isBodyStateTransformer :: StateTransformer a -> Boolean
+isBodyStateTransformer :: Transformer a -> Boolean
 export isBodyStateTransformer = where {
   BodyStateTransformer(_) =>
     true
@@ -54,7 +58,15 @@ export isBodyStateTransformer = where {
   _ =>
     false
 }
-export isLineStateTransformer = Fn.complement(isBodyStateTransformer)
+
+isLineStateTransformer :: Transformer a -> Boolean
+export isLineStateTransformer = where {
+  LineStateTransformer(_) =>
+    true
+
+  _ =>
+    false
+}
 
 // a rule consists of validations
 // and transformers
@@ -79,33 +91,26 @@ export type Rule a
     List (Validator a),
     // transformers
     List (Transformer a),
-    // state transformers
-    List (StateTransformer a),
   )
 
 export affect = where {
-  Rule(x, _, _, _, _, _) =>
+  Rule(x, _, _, _, _) =>
     x
 }
 export fixable = where {
-  Rule(_, x, _, _, _, _) =>
+  Rule(_, x, _, _, _) =>
     x
 }
 export id = where {
-  Rule(_, _, x, _, _, _) =>
+  Rule(_, _, x, _, _) =>
     x
 }
 export validators = where {
-  Rule(_, _, _, x, _, _) =>
+  Rule(_, _, _, x, _) =>
     x
 }
 export transformers = where {
-  Rule(_, _, _, _, x, _) =>
-    x
-}
-
-export stateTransformers = where {
-  Rule(_, _, _, _, _, x) =>
+  Rule(_, _, _, _, x) =>
     x
 }
 select = (fn, filter) => pipe(
@@ -117,8 +122,8 @@ export bodyValidators = select(validators, isBodyValidator)
 export lineValidators = select(validators, isLineValidator)
 export bodyTransformers = select(transformers, isBodyTransformer)
 export lineTransformers = select(transformers, isLineTransformer)
-export bodyStateTransformers = select(stateTransformers, isBodyStateTransformer)
-export lineStateTransformers = select(stateTransformers, isLineStateTransformer)
+export bodyStateTransformers = select(transformers, isBodyStateTransformer)
+export lineStateTransformers = select(transformers, isLineStateTransformer)
 
 export isBodyRule = pipe(
   affect,

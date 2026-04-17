@@ -45,7 +45,6 @@ main = () => {
           ),
         ],
         [],
-        [],
       ),
       Rule.Rule(
         Rule.LineRule,
@@ -57,7 +56,6 @@ main = () => {
             (meta, lineNum, currentLine) => String.replace("madlib", "_madlib_", currentLine),
           ),
         ],
-        [],
       ),
     ],
     { hasHeadmarker: false, hasMadmarker: false },

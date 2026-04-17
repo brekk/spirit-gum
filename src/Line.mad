@@ -50,7 +50,7 @@ export transformLines = (meta, index, raw, trs) => {
         Rule.LineTransformer(step) =>
           helper(step(meta, index, current), rest)
 
-        Rule.BodyTransformer(_) =>
+        _ =>
           helper(current, rest)
       }
   }
@@ -78,7 +78,7 @@ recursivelyProcessRules = (index, line, state, loopState, rules) => if (
 
     [rule, ...rest] =>
       where(rule) {
-        Rule.Rule(Rule.LineRule, fixable, id, validators, transformers, _) =>
+        Rule.Rule(Rule.LineRule, fixable, id, validators, transformers) =>
           do {
             lineValid = List.all(Rule.validateLine(state, index, line), validators)
             valid = loopState.valid && lineValid
@@ -93,7 +93,7 @@ recursivelyProcessRules = (index, line, state, loopState, rules) => if (
             )
           }
 
-        Rule.Rule(_, _, id, _, _, _) =>
+        Rule.Rule(_, _, id, _, _) =>
           log.lineRBody(
             "skipped: " ++ id ++ " :: " ++ show(index),
             // skip body rules, they get processed upstream
