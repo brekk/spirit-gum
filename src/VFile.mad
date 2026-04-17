@@ -34,8 +34,8 @@ type ConcreteFile state
   = ConcreteFile(
     // source path
     String,
-    // source string
-    String,
+    // source sliced by newlines with index
+    List VFileLine,
     // the metadata record
     state,
   )
@@ -105,12 +105,12 @@ export validateBody = (state, rules, body) => pipe(
   (valid) => #[valid, body],
 )(rules)
 
-processBodyRules :: a -> List (Transformer a) -> List NumberedLine -> List NumberedLine
-processBodyRules = (state, transformers, body) => {
-  helper :: a -> List NumberedLine -> List (Transformer a) -> List NumberedLine
+processBodyTransformers :: a -> List (Transformer a) -> List NumberedLine -> #[a, List NumberedLine]
+processBodyTransformers = (state, transformers, body) => {
+  helper :: a -> List NumberedLine -> List (Transformer a) -> #[a, List NumberedLine]
   helper = (newState, numBod, trs) => where(trs) {
     [] =>
-      body
+      #[newState, numBod]
 
     [a, ...rest] =>
       where(a) {
@@ -128,51 +128,24 @@ processBodyRules = (state, transformers, body) => {
   return helper(state, body, transformers)
 }
 
-// processBodyStateRules :: a
-//   -> List (BodyStateTransformer a)
-//   -> List NumberedLine
-//   -> List NumberedLine
-processBodyStateRules = (state, transformers, body) => {
-  helper :: a -> List NumberedLine -> List (tateTransformer a) -> List NumberedLine
-  helper = (meta, numBod, trs) => where(trs) {
-    [] =>
-      meta
-
-    [a, ...rest] =>
-      where(a) {
-        Rule.BodyStateTransformer(fn) =>
-          helper(meta, fn(meta, numBod), rest)
-
-        _ =>
-          helper(meta, numBod, rest)
-      }
-  }
-  return helper(state, body, transformers)
-}
-
-modifyBodyByRules :: List (Rule a) -> a -> String -> List VFileLine
+modifyBodyByRules :: List (Rule a) -> a -> String -> #[a, List VFileLine]
 export modifyBodyByRules = (rules, state, body) => {
-  bodyRules = pipe(
+  bodyTransformers = pipe(
     List.filter(Rule.isBodyRule),
     map(log.vfile("body")),
-    chain(
-      where {
-        Rule.Rule(Rule.BodyRule, fixable, id, validators, trans) =>
-          trans
-
-        _ =>
-          []
-      },
-    ),
+    chain(Rule.transformers),
   )(rules)
   return pipe(
     bodyToNumberedLines,
-    processBodyRules(state, bodyRules),
-    accumulate(Line.processRules(rules, state)),
+    processBodyTransformers(state, bodyTransformers),
+    where {
+      #[newState, newBod] =>
+        #[newState, accumulate(Line.processRules(rules, newState), newBod)]
+    },
   )(body)
 }
 
-vfileWithState :: String -> List (Rule a) -> a -> Wish VFileError (ConcreteFile (List VFileLine))
+vfileWithState :: String -> List (Rule a) -> a -> Wish VFileError (ConcreteFile a)
 export vfileWithState = (src, rules, state) => pipe(
   File.read,
   forceVFileError,
@@ -181,7 +154,14 @@ export vfileWithState = (src, rules, state) => pipe(
     where {
       #[valid, body] =>
         if (valid) {
-          Wish.good(ConcreteFile(src, body, modifyBodyByRules(rules, state, body)))
+          pipe(
+            modifyBodyByRules(rules, state),
+            where {
+              #[newState, newBod] =>
+                ConcreteFile(src, newBod, newState)
+            },
+            Wish.good,
+          )(body)
         } else {
           Wish.bad(Errors.InvalidShape)
         }

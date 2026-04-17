@@ -44,7 +44,7 @@ main = () => {
             },
           ),
         ],
-        [],
+        [Rule.BodyStateTransformer((meta, numBody) => ({ ...meta, hasHeadmarker: true }))],
       ),
       Rule.Rule(
         Rule.LineRule,
