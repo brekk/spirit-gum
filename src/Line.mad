@@ -57,69 +57,66 @@ transformLines = (meta, index, raw, trs) => {
   return helper(raw, trs)
 }
 
-recursivelyProcessRules :: List (Rule a) -> Integer -> String -> a -> LoopState -> VFileLine
-recursivelyProcessRules = (rules, index, line, state, loopState) => {
-  log.line("<><>", #[rules, index, line, state, loopState])
-  applyAgain = (rule, rest) => where(rule) {
-    Rule.Rule(Rule.LineRule, fixable, id, validators, transformers, _) =>
-      do {
-        lineValid = List.all(Rule.validateLine(state, index, line), validators)
-        log.line("@<> " ++ id ++ ":", lineValid)
-        valid = loopState.valid && lineValid
-        failReason = !lineValid ? Just(Errors.DynamicError(id, index)) : loopState.failReason
-        // transform = (meta, index, raw, trs) => {
-        newLine = valid ? transformLines(state, index, line, transformers) : line
-        log.lineR("pre recur", #[valid, failReason, newLine])
-        // next we should actually apply a transform
-        // we also need to handle passing along state
-        return recursivelyProcessRules(
-          rest,
-          index,
-          newLine,
-          state,
-          { ...loopState, valid, failReason },
-        )
-      }
+recursivelyProcessRules :: Integer -> String -> a -> LoopState -> List (Rule a) -> VFileLine
+recursivelyProcessRules = (index, line, state, loopState, rules) => if (
+  loopState.done || hasNoRemainingLineRules(rules)
+) {
+  where(loopState.failReason) {
+    Just(whyFail) =>
+      log.lineR(
+        "fail " ++ show(index),
+        (loopState.valid ? ValidLine(index, line) : InvalidLine(index, whyFail)),
+      )
 
     _ =>
-      log.lineR(
-        "skipped",
-        // skip body rules, they get processed upstream
-        recursivelyProcessRules(rest, index, line, state, loopState),
-      )
+      log.lineR("pass " ++ show(index), ValidLine(index, line))
   }
-  return if (loopState.done || hasNoRemainingLineRules(rules)) {
-    where(loopState.failReason) {
-      Just(whyFail) =>
-        log.lineR(
-          "fail " ++ show(index),
-          (loopState.valid ? ValidLine(index, line) : InvalidLine(index, whyFail)),
-        )
+} else {
+  where(rules) {
+    [] =>
+      log.lineR("this is the bug", recursivelyProcessRules(index, line, state, loopState, []))
 
-      _ =>
-        log.lineR("pass " ++ show(index), ValidLine(index, line))
-    }
-  } else {
-    where(rules) {
-      [] =>
-        log.lineR("this is the bug", recursivelyProcessRules([], index, line, state, loopState))
+    [rule, ...rest] =>
+      where(rule) {
+        Rule.Rule(Rule.LineRule, fixable, id, validators, transformers, _) =>
+          do {
+            lineValid = List.all(Rule.validateLine(state, index, line), validators)
+            valid = loopState.valid && lineValid
+            failReason = !lineValid ? Just(Errors.DynamicError(id, index)) : loopState.failReason
+            newLine = valid ? transformLines(state, index, line, transformers) : line
+            return log.lineRLine(
+              "iter: " ++ id ++ " :: " ++ show(index),
+              recursivelyProcessRules(
+                index,
+                newLine,
+                state,
+                { ...loopState, valid, failReason },
+                rest,
+              ),
+            )
+          }
 
-      [rule, ...rest] =>
-        log.lineR("again", applyAgain(rule, rest))
-    }
+        Rule.Rule(_, _, id, _, _, _) =>
+          log.lineRBody(
+            "skipped: " ++ id ++ " :: " ++ show(index),
+            // skip body rules, they get processed upstream
+            recursivelyProcessRules(index, line, state, loopState, rest),
+          )
+      }
   }
 }
+
 
 export processRules = (rules, state, lineTuple) => where(lineTuple) {
   #[index, line] =>
     log.line(
       "line: " ++ show(index),
       recursivelyProcessRules(
-        rules,
         index,
         line,
         state,
         { failReason: Nothing, done: false, valid: true },
+        rules,
       ),
     )
 }

@@ -164,9 +164,7 @@ export modifyBodyByRules = (rules, state, body) => {
   return pipe(
     bodyToNumberedLines,
     processBodyRules(state, bodyRules),
-    log.vfile("pro bod rules"),
     accumulate(Line.processRules(rules, state)),
-    log.vfile("ack"),
   )(body)
 }
 
