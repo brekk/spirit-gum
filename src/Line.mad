@@ -2,7 +2,9 @@ import type { Maybe } from "Maybe"
 import type { Wish } from "Wish"
 
 import type { VFileError } from "@/Errors"
-import type { Rule, Transformer, Validator } from "@/Rule"
+import type { Rule } from "@/Rule"
+import type { Transformer } from "@/Rule/Transformer"
+import type { Validator } from "@/Rule/Validator"
 
 import File from "File"
 import Path from "FilePath"
@@ -15,6 +17,7 @@ import Wish from "Wish"
 import Errors from "@/Errors"
 import { log } from "@/Log"
 import Rule from "@/Rule"
+import Transformer from "@/Rule/Transformer"
 
 
 
@@ -45,22 +48,31 @@ export hasNoRemainingLineRules = pipe(
   Fn.equals(0),
 )
 
-transformLines :: a -> Integer -> String -> List (Transformer a) -> String
-export transformLines = (meta, index, raw, trs) => {
-  helper = (current, steps) => where(steps) {
+transformLines :: a -> Integer -> String -> List (Transformer a) -> #[a, String]
+export transformLines = (meta, index, rawLine, trs) => {
+  helper = (currentLine, state, steps) => where(steps) {
     [] =>
-      current
+      #[state, currentLine]
 
     [stepM, ...rest] =>
       where(stepM) {
-        Rule.LineTransformer(step) =>
-          helper(step(meta, index, current), rest)
+        Transformer.LineTransformer(step) =>
+          helper(step(state, index, currentLine), state, rest)
+
+        Transformer.LineStateTransformer(step) =>
+          helper(currentLine, step(state, index, currentLine), rest)
+
+        Transformer.LineRawTransformer(step) =>
+          where(step(state, index, currentLine)) {
+            #[s, l] =>
+              helper(l, s, rest)
+          }
 
         _ =>
-          helper(current, rest)
+          helper(currentLine, state, rest)
       }
   }
-  return helper(raw, trs)
+  return helper(rawLine, meta, trs)
 }
 
 validOrEmptyLine = (idx, x) => x == "" ? EmptyLine(idx) : ValidLine(idx, x)
@@ -85,20 +97,24 @@ recursivelyProcessRules = (index, line, state, loopState, rules) => if (
       where(rule) {
         Rule.Rule(Rule.LineRule, fixable, id, validators, transformers) =>
           do {
+            // TODO: should we capture the id of failing rules here?
             lineValid = List.all(Rule.validateLine(state, index, line), validators)
             valid = loopState.valid && lineValid
             failReason = !lineValid ? Just(Errors.DynamicError(id, index)) : loopState.failReason
-            newLine = valid ? transformLines(state, index, line, transformers) : line
-            return log.lineR(
-              id,
-              recursivelyProcessRules(
-                index,
-                newLine,
-                state,
-                { ...loopState, valid, failReason },
-                rest,
-              ),
-            )
+            lineTuple = valid ? transformLines(state, index, line, transformers) : #[state, line]
+            return where(lineTuple) {
+              #[finalState, newLine] =>
+                log.lineR(
+                  id,
+                  recursivelyProcessRules(
+                    index,
+                    newLine,
+                    finalState,
+                    { ...loopState, valid, failReason },
+                    rest,
+                  ),
+                )
+            }
           }
 
         Rule.Rule(_, _, id, _, _) =>

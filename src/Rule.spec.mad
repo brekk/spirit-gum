@@ -1,18 +1,20 @@
 import { caseN2, caseN3, report } from "Study"
 
 import Rule from "@/Rule"
+import Transformer from "@/Rule/Transformer"
+import Validator from "@/Rule/Validator"
 
 
 
-bodyVal = Rule.BodyValidator((meta, body) => true)
-lineVal = Rule.LineValidator((meta, index, line) => true)
+bodyVal = Validator.BodyValidator((meta, body) => true)
+lineVal = Validator.LineValidator((meta, index, line) => true)
 
 HARNESS_VALIDATORS = [bodyVal]
 
-bodyTrans = Rule.BodyTransformer((meta, body) => body)
-lineTrans = Rule.LineTransformer((meta, index, line) => line)
-bodyStateTrans = Rule.BodyStateTransformer((meta, numBody) => meta)
-lineStateTrans = Rule.LineStateTransformer((meta, index, content) => meta)
+bodyTrans = Transformer.BodyTransformer((meta, body) => body)
+lineTrans = Transformer.LineTransformer((meta, index, line) => line)
+bodyStateTrans = Transformer.BodyStateTransformer((meta, numBody) => meta)
+lineStateTrans = Transformer.LineStateTransformer((meta, index, content) => meta)
 HARNESS_TRANSFORMERS = [bodyTrans]
 
 
@@ -25,28 +27,28 @@ report(Rule.validators, "validators", [#[HARNESS, HARNESS_VALIDATORS]])
 report(Rule.transformers, "transformers", [#[HARNESS, HARNESS_TRANSFORMERS]])
 report(Rule.bodyValidators, "bodyValidators", [#[HARNESS, HARNESS_VALIDATORS]])
 report(Rule.lineValidators, "lineValidators", [#[HARNESS, []]])
-report(Rule.isBodyValidator, "isBodyValidator", [#[bodyVal, true], #[lineVal, false]])
+report(Validator.isBody, "Validator.isBody", [#[bodyVal, true], #[lineVal, false]])
 
 report(Rule.bodyTransformers, "bodyTransformers", [#[HARNESS, HARNESS_TRANSFORMERS]])
 report(Rule.lineTransformers, "lineTransformers", [#[HARNESS, []]])
 report(
-  Rule.isBodyTransformer,
-  "isBodyTransformer",
+  Transformer.isBody,
+  "Transformer.isBody",
   [#[bodyTrans, true], #[lineTrans, false], #[bodyStateTrans, false], #[lineStateTrans, false]],
 )
 report(
-  Rule.isLineTransformer,
-  "isLineTransformer",
+  Transformer.isLine,
+  "Transformer.isLine",
   [#[bodyTrans, false], #[lineTrans, true], #[bodyStateTrans, false], #[lineStateTrans, false]],
 )
 report(
-  Rule.isBodyStateTransformer,
-  "isBodyStateTransformer",
+  Transformer.isBodyState,
+  "Transformer.isBodyState",
   [#[bodyTrans, false], #[lineTrans, false], #[bodyStateTrans, true], #[lineStateTrans, false]],
 )
 report(
-  Rule.isLineStateTransformer,
-  "isLineStateTransformer",
+  Transformer.isLineState,
+  "Transformer.isLineState",
   [#[bodyTrans, false], #[lineTrans, false], #[bodyStateTrans, false], #[lineStateTrans, true]],
 )
 report(Rule.lineStateTransformers, "lineStateTransformers", [#[HARNESS, []]])

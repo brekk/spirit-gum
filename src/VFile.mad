@@ -3,7 +3,9 @@ import type { Wish } from "Wish"
 
 import type { VFileError } from "@/Errors"
 import type { VFileLine } from "@/Line"
-import type { Rule, Transformer, Validator } from "@/Rule"
+import type { Rule } from "@/Rule"
+import type { Transformer } from "@/Rule/Transformer"
+import type { Validator } from "@/Rule/Validator"
 
 import File from "File"
 import Path from "FilePath"
@@ -19,6 +21,8 @@ import Line from "@/Line"
 import { accumulate } from "@/List"
 import { log } from "@/Log"
 import Rule from "@/Rule"
+import Transformer from "@/Rule/Transformer"
+import Validator from "@/Rule/Validator"
 
 
 
@@ -81,8 +85,8 @@ export runBodyValidation = (state, body, vals) => {
       passing && validate(check(state, body), z)
   }
   return pipe(
-    List.filter(Rule.isBodyValidator),
-    map(where { Rule.BodyValidator(fn) => fn }),
+    List.filter(Validator.isBody),
+    map(where { Validator.BodyValidator(fn) => fn }),
     validate(true),
     log.vfileV("did pass"),
   )(vals)
@@ -111,10 +115,10 @@ processBodyTransformers = (state, transformers, body) => {
 
     [a, ...rest] =>
       where(a) {
-        Rule.BodyTransformer(fn) =>
+        Transformer.BodyTransformer(fn) =>
           helper(newState, fn(newState, numBod), rest)
 
-        Rule.BodyStateTransformer(fn) =>
+        Transformer.BodyStateTransformer(fn) =>
           helper(fn(newState, numBod), numBod, rest)
 
         _ =>

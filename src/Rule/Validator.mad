@@ -1,0 +1,18 @@
+import Fn from "Function"
+
+
+
+export type Validator a
+  = BodyValidator(a -> String -> Boolean)
+  | LineValidator(a -> Integer -> String -> Boolean)
+
+isBody :: Validator a -> Boolean
+export isBody = where {
+  BodyValidator(_) =>
+    true
+
+  _ =>
+    false
+}
+
+export isLine = Fn.complement(isBody)

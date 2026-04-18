@@ -4,17 +4,17 @@ virtual files in madlib
 
 ## types
 
-* Errors
+* Errors.mad
   - KnownVFileErrorKind 
   - VFileError 
-* Line
+* Line.mad
   - VFileLine
-* Rule
+* Rule.mad
   - RuleAffect
   - Validator a
   - Transformer a
   - Rule a
-* VFile
+* VFile.mad
   - FileTemplate a
-* VFile
+* VFile.mad
   - VirtualFile a

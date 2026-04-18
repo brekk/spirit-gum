@@ -1,0 +1,51 @@
+alias NumberedLine = #[Integer, String]
+
+export type Transformer a
+  = BodyTransformer(a -> List NumberedLine -> List NumberedLine)
+  | LineTransformer(a -> Integer -> String -> String)
+  | BodyStateTransformer(a -> List NumberedLine -> a)
+  | LineStateTransformer(a -> Integer -> String -> a)
+  | LineRawTransformer(a -> Integer -> String -> #[a, String])
+
+isBody :: Transformer a -> Boolean
+export isBody = where {
+  BodyTransformer(_) =>
+    true
+
+  _ =>
+    false
+}
+export isLine = where {
+  LineTransformer(_) =>
+    true
+
+  _ =>
+    false
+}
+
+isBodyState :: Transformer a -> Boolean
+export isBodyState = where {
+  BodyStateTransformer(_) =>
+    true
+
+  _ =>
+    false
+}
+
+isLineState :: Transformer a -> Boolean
+export isLineState = where {
+  LineStateTransformer(_) =>
+    true
+
+  _ =>
+    false
+}
+
+isLineRaw :: Transformer a -> Boolean
+export isLineRaw = where {
+  LineRawTransformer(_) =>
+    true
+
+  _ =>
+    false
+}

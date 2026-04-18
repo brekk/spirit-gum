@@ -8,6 +8,8 @@ import Wish from "Wish"
 
 import { log } from "@/Log"
 import Rule from "@/Rule"
+import Transformer from "@/Rule/Transformer"
+import Validator from "@/Rule/Validator"
 import VFile from "@/VFile"
 
 
@@ -37,18 +39,24 @@ capitalize = (str) => where(String.toList(str)) {
     String.join("", [String.toUpper(String.fromList([a])), String.fromList(z)])
 }
 
+REGEX = {
+  NON_WORD_AND_SPACES: "[\\W\\s]",
+  CAPTURING: { HEADING: "^(#*)\\s*(.*)", MADLIB_FILE: "([\\w\\.]*).mad" },
+}
+
 slug = pipe(
   String.toLower,
   capitalize,
   String.trim,
-  String.replace("[\\W\\s]", " "),
+  String.replace(REGEX.NON_WORD_AND_SPACES, " "),
 )
 
 headingSlug = (meta, index, line) => {
   isHeading = String.startsWith("#", line)
+  // there might be a cleaner way of expressing this
   clean = isHeading
     ? pipe(
-      String.replace("^(#*)\\s*(.*)", "$1<>$2"),
+      String.replace(REGEX.CAPTURING.HEADING, "$1<>$2"),
       String.split("<>"),
       where {
         [a, b] =>
@@ -62,6 +70,12 @@ headingSlug = (meta, index, line) => {
   return clean
 }
 
+linkFiles = (meta, index, line) => Fn.when(
+  String.match(REGEX.CAPTURING.MADLIB_FILE),
+  // (/main\/src\/$1\.mad)"
+  String.replace(REGEX.CAPTURING.MADLIB_FILE, "[$1.mad](./blob/main/src/$1.mad)"),
+)(line)
+
 
 main = () => {
   myVFile = VFile.vfileWithState(
@@ -70,23 +84,30 @@ main = () => {
       Rule.Rule(
         Rule.BodyRule,
         false,
-        "madlib/readme/title",
-        [Rule.BodyValidator((_, body) => String.contains("^#", body))],
-        [Rule.BodyStateTransformer((meta, numBody) => ({ ...meta, hasTitle: true }))],
+        "spirit/readme/title",
+        [Validator.BodyValidator((_, body) => String.contains("^#", body))],
+        [Transformer.BodyStateTransformer((meta, numBody) => ({ ...meta, hasTitle: true }))],
       ),
       Rule.Rule(
         Rule.LineRule,
         true,
-        "madlib/readme/headings",
+        "spirit/readme/headings",
         [],
-        [Rule.LineTransformer(headingSlug)],
+        [Transformer.LineTransformer(headingSlug), Transformer.LineTransformer(linkFiles)],
       ),
       Rule.Rule(
         Rule.BodyRule,
         false,
-        "madlib/readme/types",
-        [Rule.BodyValidator((_, body) => String.contains("# types", body))],
-        [Rule.BodyStateTransformer((meta, numBody) => ({ ...meta, hasTypes: true }))],
+        "spirit/readme/types",
+        [
+          Validator.BodyValidator(
+            (_, body) => pipe(
+              String.toLower,
+              String.contains("# types"),
+            )(body),
+          ),
+        ],
+        [Transformer.BodyStateTransformer((meta, numBody) => ({ ...meta, hasTypes: true }))],
       ),
     ],
     INITIAL_STATE,
