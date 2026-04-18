@@ -3,20 +3,27 @@ import { env, tagWithScope } from "PartyBus"
 
 
 export BASE = "spirit"
+export E = {
+  VFILE: "vfile",
+  VALIDATOR: "validation",
+  TRANSFORMER: "transformer",
+  RULE: "rule",
+  LINE: "line",
+}
 
 export TAGS = {
-  vfile: tagWithScope(BASE, ["vfile"]),
-  vfileV: tagWithScope(BASE, ["vfile", "validation"]),
-  vfileT: tagWithScope(BASE, ["vfile", "transformer"]),
-  vfileR: tagWithScope(BASE, ["vfile", "rule"]),
-  rule: tagWithScope(BASE, ["rule"]),
-  validator: tagWithScope(BASE, ["rule", "validator"]),
-  transformer: tagWithScope(BASE, ["rule", "transformer"]),
+  vfile: tagWithScope(BASE, [E.VFILE]),
+  vfileV: tagWithScope(BASE, [E.VFILE, E.VALIDATOR]),
+  vfileT: tagWithScope(BASE, [E.VFILE, E.TRANSFORMER]),
+  vfileR: tagWithScope(BASE, [E.VFILE, E.RULE]),
+  rule: tagWithScope(BASE, [E.RULE]),
+  validator: tagWithScope(BASE, [E.RULE, E.VALIDATOR]),
+  transformer: tagWithScope(BASE, [E.RULE, E.TRANSFORMER]),
   main: tagWithScope(BASE, ["main"]),
-  line: tagWithScope(BASE, ["line"]),
-  lineR: tagWithScope(BASE, ["line", "rule"]),
-  lineRPass: tagWithScope(BASE, ["line", "rule", "pass"]),
-  lineRFail: tagWithScope(BASE, ["line", "rule", "fail"]),
+  line: tagWithScope(BASE, [E.LINE]),
+  lineR: tagWithScope(BASE, [E.LINE, E.RULE]),
+  lineRPass: tagWithScope(BASE, [E.LINE, E.RULE, "pass"]),
+  lineRFail: tagWithScope(BASE, [E.LINE, E.RULE, "fail"]),
 }
 
 export log = {
