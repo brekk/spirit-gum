@@ -150,7 +150,10 @@ vfileWithState :: String -> List (Rule a) -> a -> Wish VFileError (ConcreteFile 
 export vfileWithState = (src, rules, state) => pipe(
   File.read,
   forceVFileError,
-  map(validateBody(state, rules)),
+  map(
+    // validate the body
+    validateBody(state, rules),
+  ),
   chain(
     where {
       #[valid, body] =>
