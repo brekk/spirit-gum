@@ -34,7 +34,7 @@ alias NumberedLine = #[Integer, String]
 // - a file's raw body
 // - a state which is produced by transforming path and the raw body
 
-type ConcreteFile state
+export type ConcreteFile state
   = ConcreteFile(
     // source path
     String,
@@ -43,22 +43,9 @@ type ConcreteFile state
     state,
   )
 
-forceVFileError = Wish.mapRej((_) => Errors.InvalidSource)
+export forceVFileError = Wish.mapRej((_) => Errors.InvalidSource)
 
 
-// the processor takes a source path string and produces a concrete file instance
-export alias Processor state = String -> ConcreteFile state
-
-// the renderer takes a concrete file and produces an output
-export alias Renderer state = ConcreteFile state -> String
-
-export type FileTemplate a
-  = FileTemplate(
-    // processor
-    Processor a,
-    // renderer
-    Renderer a,
-  )
 
 export type VirtualFile a
   = VFile(
@@ -177,6 +164,19 @@ export modifyBodyByRules = (rules, state, body) => {
   )(body)
 }
 
+
+export alias Processor state = String -> List (Rule a) -> a -> String -> ConcreteFile state
+
+concretizeBody :: Processor a
+export concretizeBody = (src, rules, state, raw) => pipe(
+  modifyBodyByRules(rules, state),
+  where {
+    #[newState, ratifiedBod] =>
+      ConcreteFile(src, ratifiedBod, newState)
+  },
+)(raw)
+
+
 vfileWithState :: String -> List (Rule a) -> a -> Wish VFileError (ConcreteFile a)
 export vfileWithState = (src, rules, state) => pipe(
   File.read,
@@ -187,11 +187,7 @@ export vfileWithState = (src, rules, state) => pipe(
       #[valid, body] =>
         if (valid) {
           pipe(
-            modifyBodyByRules(rules, state),
-            where {
-              #[newState, ratifiedBod] =>
-                ConcreteFile(src, ratifiedBod, newState)
-            },
+            concretizeBody(src, rules, state),
             Wish.good,
           )(body)
         } else {

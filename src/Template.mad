@@ -1,0 +1,29 @@
+import type { VFileLine } from "@/Line"
+import type { ConcreteFile } from "@/VFile"
+
+import { fromMaybe } from "Maybe"
+
+import Line from "@/Line"
+import { ConcreteFile } from "@/VFile"
+
+
+
+// the processor takes a source path string and produces a concrete file instance
+
+// the renderer takes a concrete file and produces an output
+export alias Renderer state = String -> List String -> state -> String
+
+export type FileTemplate a
+  = FileTemplate(
+    ConcreteFile a,
+    // renderer
+    Renderer a,
+  )
+
+renderWithConverter :: (List VFileLine -> List String) -> Renderer a -> ConcreteFile a -> String
+export renderWithConverter = (lineConverter, renderer, raw) => where(raw) {
+  ConcreteFile(srcPath, lines, state) =>
+    renderer(srcPath, lineConverter(lines), state)
+}
+
+export render = renderWithConverter(map(Line.render))

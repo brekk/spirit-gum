@@ -1,15 +1,18 @@
 import type { VirtualFile } from "@/VFile"
 
+import File from "File"
 import Fn from "Function"
 import IO from "IO"
 import List from "List"
 import String from "String"
 import Wish from "Wish"
 
+import Line from "@/Line"
 import { log } from "@/Log"
 import Rule from "@/Rule"
 import Transformer from "@/Rule/Transformer"
 import Validator from "@/Rule/Validator"
+import Template from "@/Template"
 import VFile from "@/VFile"
 
 
@@ -131,5 +134,16 @@ main = () => {
     ],
     INITIAL_STATE,
   )
-  fillfull("Barf!", "Yay!", myVFile)
+  pipe(
+    map(
+      Template.renderWithConverter(map(Line.render), (src, lines, state) => String.unlines(lines)),
+    ),
+    chain(
+      pipe(
+        File.write("./readme2.md"),
+        VFile.forceVFileError,
+      ),
+    ),
+    fillfull("Barf!", "Yay!"),
+  )(myVFile)
 }

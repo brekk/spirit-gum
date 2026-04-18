@@ -10,6 +10,7 @@ import File from "File"
 import Path from "FilePath"
 import Fn from "Function"
 import List from "List"
+import { fromMaybe } from "Maybe"
 import { Just, Nothing } from "Maybe"
 import String from "String"
 import Wish from "Wish"
@@ -46,6 +47,20 @@ export hasNoRemainingLineRules = pipe(
   List.filter(Rule.isLineRule),
   List.length,
   Fn.equals(0),
+)
+
+safeRender :: VFileLine -> Maybe String
+export safeRender = where {
+  ValidLine(_, x) =>
+    Just(x)
+
+  _ =>
+    Nothing
+}
+
+export render = pipe(
+  safeRender,
+  fromMaybe(""),
 )
 
 transformLines :: a -> Integer -> String -> List (Transformer a) -> #[a, String]
