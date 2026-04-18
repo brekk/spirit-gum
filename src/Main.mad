@@ -83,11 +83,9 @@ grabExports = (meta, index, line) => Fn.ifElse(
     String.replace(REGEX.CAPTURING.LIST_ITEM, "$1"),
     String.trim,
     (item) => {
-      log.lineT("prev", meta.types)
       statemod = { ...meta, types: List.append(item, meta.types) }
       return #[statemod, "  - `" ++ item ++ "`"]
     },
-    log.main("GRAB"),
   ),
   Fn.always(#[meta, line]),
 )(line)

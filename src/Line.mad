@@ -51,31 +51,28 @@ export hasNoRemainingLineRules = pipe(
 transformLines :: a -> Integer -> String -> List (Transformer a) -> #[a, String]
 export transformLines = (meta, index, rawLine, trs) => {
   iii = show(index)
-  helper = (currentLine, state, steps) => log.line(
-    "ITER:" ++ show(state),
-    where(steps) {
-      [] =>
-        #[state, currentLine]
+  helper = (currentLine, state, steps) => where(steps) {
+    [] =>
+      #[state, currentLine]
 
-      [stepM, ...rest] =>
-        where(stepM) {
-          Transformer.LineTransformer(step) =>
-            log.lineTLine(iii, helper(step(state, index, currentLine), state, rest))
+    [stepM, ...rest] =>
+      where(stepM) {
+        Transformer.LineTransformer(step) =>
+          helper(step(state, index, currentLine), state, rest)
 
-          Transformer.LineStateTransformer(step) =>
-            log.lineTState(iii, helper(currentLine, step(state, index, currentLine), rest))
+        Transformer.LineStateTransformer(step) =>
+          helper(currentLine, step(state, index, currentLine), rest)
 
-          Transformer.LineRawTransformer(step) =>
-            where(step(state, index, currentLine)) {
-              #[restate, reline] =>
-                log.lineTRaw(iii, helper(reline, restate, rest))
-            }
+        Transformer.LineRawTransformer(step) =>
+          where(step(state, index, currentLine)) {
+            #[restate, reline] =>
+              helper(reline, restate, rest)
+          }
 
-          _ =>
-            helper(currentLine, state, rest)
-        }
-    },
-  )
+        _ =>
+          helper(currentLine, state, rest)
+      }
+  }
   return helper(rawLine, meta, trs)
 }
 
@@ -112,15 +109,12 @@ export processRules = (orules, ostate, olineTuple) => {
               lineTuple = valid ? transformLines(state, index, line, transformers) : #[state, line]
               return where(lineTuple) {
                 #[finalState, newLine] =>
-                  log.lineR(
-                    id,
-                    recurseRules(
-                      index,
-                      newLine,
-                      finalState,
-                      { ...loopState, valid, failReason },
-                      rest,
-                    ),
+                  recurseRules(
+                    index,
+                    newLine,
+                    finalState,
+                    { ...loopState, valid, failReason },
+                    rest,
                   )
               }
             }
@@ -134,15 +128,6 @@ export processRules = (orules, ostate, olineTuple) => {
   }
   return where(olineTuple) {
     #[oindex, oline] =>
-      log.line(
-        "line: " ++ show(oindex),
-        recurseRules(
-          oindex,
-          oline,
-          ostate,
-          { failReason: Nothing, done: false, valid: true },
-          orules,
-        ),
-      )
+      recurseRules(oindex, oline, ostate, { failReason: Nothing, done: false, valid: true }, orules)
   }
 }

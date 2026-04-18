@@ -46,3 +46,26 @@ export log = {
   lineTState: env(TAGS.lineTState),
   lineTRaw: env(TAGS.lineTRaw),
 }
+
+tap :: (String -> b -> b) -> String -> (a -> b) -> a -> a
+export tap = (spout, msg, taproot, x) => {
+  spout(msg, taproot(x))
+  return x
+}
+
+export tapped = {
+  vfile: tap(log.vfile),
+  vfileV: tap(log.vfileV),
+  vfileT: tap(log.vfileT),
+  vfileR: tap(log.vfileR),
+  rule: tap(log.rule),
+  validator: tap(log.validator),
+  transformer: tap(log.transformer),
+  main: tap(log.main),
+  line: tap(log.line),
+  lineR: tap(log.lineR),
+  lineT: tap(log.lineT),
+  lineTLine: tap(log.lineTLine),
+  lineTState: tap(log.lineTState),
+  lineTRaw: tap(log.lineTRaw),
+}

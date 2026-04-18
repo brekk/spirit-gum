@@ -19,7 +19,7 @@ import Wish from "Wish"
 import Errors from "@/Errors"
 import Line from "@/Line"
 import { accumulate } from "@/List"
-import { log } from "@/Log"
+import { log, tapped } from "@/Log"
 import Rule from "@/Rule"
 import Transformer from "@/Rule/Transformer"
 import Validator from "@/Rule/Validator"
@@ -88,7 +88,6 @@ export runBodyValidation = (state, body, vals) => {
     List.filter(Validator.isBody),
     map(where { Validator.BodyValidator(fn) => fn }),
     validate(true),
-    log.vfileV("did pass"),
   )(vals)
 }
 
@@ -97,7 +96,11 @@ export validateBody = (state, rules, body) => pipe(
   List.all(
     where {
       Rule.Rule(Rule.BodyRule, fixable, id, vals, trans) =>
-        runBodyValidation(state, body, vals)
+        tapped.vfileV(
+          id,
+          (success) => success ? "passed!" : "failed",
+          runBodyValidation(state, body, vals),
+        )
 
       _ =>
         true
@@ -129,8 +132,8 @@ processBodyTransformers = (state, transformers, body) => {
   return helper(state, body, transformers)
 }
 
-wire :: a -> List (Rule a) -> List NumberedLine -> #[a, List VFileLine]
-wire = (state, rules, lines) => {
+encodeStateByLine :: a -> List (Rule a) -> List NumberedLine -> #[a, List VFileLine]
+encodeStateByLine = (state, rules, lines) => {
   ruler = Line.processRules(rules)
   helper = (x, stack, processed) => where(stack) {
     [] =>
@@ -150,7 +153,7 @@ modifyBodyByRules :: List (Rule a) -> a -> String -> #[a, List VFileLine]
 export modifyBodyByRules = (rules, state, body) => {
   bodyTransformers = pipe(
     List.filter(Rule.isBodyRule),
-    map(log.vfile("body")),
+    map(tapped.vfileR("loading rule:", Rule.id)),
     chain(Rule.transformers),
   )(rules)
   return pipe(
@@ -158,8 +161,19 @@ export modifyBodyByRules = (rules, state, body) => {
     processBodyTransformers(state, bodyTransformers),
     where {
       #[newState, newBod] =>
-        wire(newState, rules, newBod)
+        encodeStateByLine(newState, rules, newBod)
     },
+    tapped.vfileR(
+      "processed",
+      where {
+        #[newState, newBody] =>
+          pipe(
+            List.length,
+            show,
+          )(newBody)
+            ++ " lines"
+      },
+    ),
   )(body)
 }
 
