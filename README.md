@@ -4,17 +4,17 @@ fugacious files in madlib
 
 ## Types
 
-* [Errors.mad](/blob/main/src/Errors.mad)
+* [Errors.mad](//github.com/brekk/spirit-gum/blob/main/src/Errors.mad)
   - `KnownVFileErrorKind`
   - `VFileError`
-* [Line.mad](/blob/main/src/Line.mad)
+* [Line.mad](//github.com/brekk/spirit-gum/blob/main/src/Line.mad)
   - `VFileLine`
-* [Rule.mad](/blob/main/src/Rule.mad)
+* [Rule.mad](//github.com/brekk/spirit-gum/blob/main/src/Rule.mad)
   - `RuleAffect`
   - `Validator a`
   - `Transformer a`
   - `Rule a`
-* [VFile.mad](/blob/main/src/VFile.mad)
+* [VFile.mad](//github.com/brekk/spirit-gum/blob/main/src/VFile.mad)
   - `FileTemplate a`
-* [VFile.mad](/blob/main/src/VFile.mad)
+* [VFile.mad](//github.com/brekk/spirit-gum/blob/main/src/VFile.mad)
   - `VirtualFile a`

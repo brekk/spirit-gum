@@ -75,7 +75,10 @@ headingSlug = (meta, index, line) => {
 
 linkFiles = (meta, index, line) => Fn.when(
   String.match(REGEX.CAPTURING.MADLIB_FILE),
-  String.replace(REGEX.CAPTURING.MADLIB_FILE, "[$1.mad](/blob/main/src/$1.mad)"),
+  String.replace(
+    REGEX.CAPTURING.MADLIB_FILE,
+    "[$1.mad](//github.com/brekk/spirit-gum/blob/main/src/$1.mad)",
+  ),
 )(line)
 
 stringAppend = (a, b) => a ++ b
