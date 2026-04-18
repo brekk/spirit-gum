@@ -9,6 +9,8 @@ export E = {
   TRANSFORMER: "transformer",
   RULE: "rule",
   LINE: "line",
+  STATE: "state",
+  RAW: "raw",
 }
 
 export TAGS = {
@@ -22,8 +24,10 @@ export TAGS = {
   main: tagWithScope(BASE, ["main"]),
   line: tagWithScope(BASE, [E.LINE]),
   lineR: tagWithScope(BASE, [E.LINE, E.RULE]),
-  lineRPass: tagWithScope(BASE, [E.LINE, E.RULE, "pass"]),
-  lineRFail: tagWithScope(BASE, [E.LINE, E.RULE, "fail"]),
+  lineT: tagWithScope(BASE, [E.LINE, E.TRANSFORMER]),
+  lineTLine: tagWithScope(BASE, [E.LINE, E.TRANSFORMER, E.LINE]),
+  lineTState: tagWithScope(BASE, [E.LINE, E.TRANSFORMER, E.STATE]),
+  lineTRaw: tagWithScope(BASE, [E.LINE, E.TRANSFORMER, E.RAW]),
 }
 
 export log = {
@@ -37,6 +41,8 @@ export log = {
   main: env(TAGS.main),
   line: env(TAGS.line),
   lineR: env(TAGS.lineR),
-  lineRPass: env(TAGS.lineRPass),
-  lineRFail: env(TAGS.lineRFail),
+  lineT: env(TAGS.lineT),
+  lineTLine: env(TAGS.lineTLine),
+  lineTState: env(TAGS.lineTState),
+  lineTRaw: env(TAGS.lineTRaw),
 }

@@ -41,7 +41,7 @@ capitalize = (str) => where(String.toList(str)) {
 
 REGEX = {
   NON_WORD_AND_SPACES: "[\\W\\s]",
-  CAPTURING: { HEADING: "^(#*)\\s*(.*)", MADLIB_FILE: "([\\w\\.]*).mad" },
+  CAPTURING: { HEADING: "^(#*)\\s*(.*)", MADLIB_FILE: "([\\w\\.]*).mad", LIST_ITEM: " - (\\w*)" },
 }
 
 slug = pipe(
@@ -72,9 +72,26 @@ headingSlug = (meta, index, line) => {
 
 linkFiles = (meta, index, line) => Fn.when(
   String.match(REGEX.CAPTURING.MADLIB_FILE),
-  // (/main\/src\/$1\.mad)"
   String.replace(REGEX.CAPTURING.MADLIB_FILE, "[$1.mad](./blob/main/src/$1.mad)"),
 )(line)
+
+stringAppend = (a, b) => a ++ b
+
+grabExports = (meta, index, line) => Fn.ifElse(
+  String.match(REGEX.CAPTURING.LIST_ITEM),
+  pipe(
+    String.replace(REGEX.CAPTURING.LIST_ITEM, "$1"),
+    String.trim,
+    (item) => {
+      log.lineT("prev", meta.types)
+      statemod = { ...meta, types: List.append(item, meta.types) }
+      return #[statemod, "  - `" ++ item ++ "`"]
+    },
+    log.main("GRAB"),
+  ),
+  Fn.always(#[meta, line]),
+)(line)
+
 
 
 main = () => {
@@ -93,7 +110,11 @@ main = () => {
         true,
         "spirit/readme/headings",
         [],
-        [Transformer.LineTransformer(headingSlug), Transformer.LineTransformer(linkFiles)],
+        [
+          Transformer.LineTransformer(headingSlug),
+          Transformer.LineTransformer(linkFiles),
+          Transformer.LineRawTransformer(grabExports),
+        ],
       ),
       Rule.Rule(
         Rule.BodyRule,

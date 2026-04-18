@@ -129,6 +129,19 @@ processBodyTransformers = (state, transformers, body) => {
   return helper(state, body, transformers)
 }
 
+wire :: a -> List (Rule a) -> List NumberedLine -> #[a, List VFileLine]
+wire = (state, rules, lines) => pipe(
+  List.reduce(
+    (agg, line) => where(Line.processRules(rules, agg.state, line)) {
+      #[newState, lineM] =>
+        ({ state: newState, stack: List.append(lineM, agg.stack) })
+    },
+    { state, stack: [] },
+  ),
+  log.vfileR("wired state"),
+  (x) => #[x.state, x.stack],
+)(lines)
+
 modifyBodyByRules :: List (Rule a) -> a -> String -> #[a, List VFileLine]
 export modifyBodyByRules = (rules, state, body) => {
   bodyTransformers = pipe(
@@ -141,7 +154,7 @@ export modifyBodyByRules = (rules, state, body) => {
     processBodyTransformers(state, bodyTransformers),
     where {
       #[newState, newBod] =>
-        #[newState, accumulate(Line.processRules(rules, newState), newBod)]
+        wire(newState, rules, newBod)
     },
   )(body)
 }
