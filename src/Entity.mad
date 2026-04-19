@@ -1,0 +1,43 @@
+import type { Maybe } from "Maybe"
+
+import Fn from "Function"
+import List from "List"
+import { Just, Nothing } from "Maybe"
+import String from "String"
+
+
+
+alias NumberedLine = #[Integer, String]
+export alias Matcher a = a -> NumberedLine -> Boolean
+
+type EntityMatcher a = LineMatcher(Matcher a) | SequentialMatcher(Matcher a, Matcher a)
+type Entity a = Entity(String, EntityMatcher a, List NumberedLine)
+
+name :: Entity a -> String
+export name = where {
+  Entity(x, _, _) =>
+    x
+}
+startMatch :: Entity a -> Matcher a
+export startMatch = where {
+  Entity(_, SequentialMatcher(x, _), _) =>
+    x
+
+  Entity(_, LineMatcher(x), _) =>
+    x
+}
+endMatch :: Entity a -> Maybe (Matcher a)
+export endMatch = where {
+  Entity(_, SequentialMatcher(_, x), _) =>
+    Just(x)
+
+  _ =>
+    Nothing
+}
+body :: Entity a -> List NumberedLine
+export body = where {
+  Entity(_, _, x) =>
+    x
+}
+
+export type Extract a = Extract(List NumberedLine -> #[a, String])

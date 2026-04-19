@@ -177,22 +177,23 @@ export concretizeBody = (src, rules, state, raw) => pipe(
   },
 )(raw)
 
-cfileWithState :: List (Rule a) -> a -> String -> #[Boolean, ConcreteFile a]
-export cfileWithState = (rules, state, src) => pipe(
+cfileWithState :: String -> List (Rule a) -> a -> String -> #[Boolean, ConcreteFile a]
+export cfileWithState = (srcPath, rules, state, rawBod) => pipe(
   validateBody(state, rules),
   where {
     #[valid, body] =>
       // we could handle validity here, but Maybes are cumbersome if we don't need them
-      #[valid, concretizeBody(src, rules, state, body)]
+      #[valid, concretizeBody(srcPath, rules, state, body)]
   },
-)(src)
+)(rawBod)
 
+export alias VFile a = Wish VFileError (ConcreteFile a)
 
-vfileWithState :: String -> List (Rule a) -> a -> Wish VFileError (ConcreteFile a)
+vfileWithState :: String -> List (Rule a) -> a -> VFile a
 export vfileWithState = (src, rules, state) => pipe(
   File.read,
   forceVFileError,
-  map(cfileWithState(rules, state)),
+  map(cfileWithState(src, rules, state)),
   chain(
     where {
       #[valid, cFile] =>
