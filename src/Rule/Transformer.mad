@@ -8,6 +8,14 @@ export type Transformer a
   | LineStateTransformer(a -> Integer -> String -> a)
   | LineRawTransformer(a -> Integer -> String -> #[a, String])
 
+export ofBody = BodyTransformer
+export ofBodyState = BodyStateTransformer
+export ofBodyRaw = BodyRawTransformer
+
+export ofLine = LineTransformer
+export ofLineState = LineStateTransformer
+export ofLineRaw = LineRawTransformer
+
 isBody :: Transformer a -> Boolean
 export isBody = where {
   BodyTransformer(_) =>

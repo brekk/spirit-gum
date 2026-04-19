@@ -1,5 +1,4 @@
-import type { VirtualFile } from "@/VFile"
-
+import Compare from "Compare"
 import File from "File"
 import Fn from "Function"
 import IO from "IO"
@@ -31,16 +30,17 @@ fillfull = (badMsg, goodMsg, wish) => Wish.fulfill(
 SOURCE = "./readme-before-spirit-gum.md"
 INITIAL_STATE = { hasTitle: false, hasTypes: false, types: [], constructors: [] }
 
-capitalize = (str) => where(String.toList(str)) {
-  [] =>
-    ""
-
-  [a] =>
-    String.toUpper(String.fromList([a]))
-
-  [a, ...z] =>
-    String.join("", [String.toUpper(String.fromList([a])), String.fromList(z)])
-}
+capitalize = Fn.when(
+  pipe(
+    String.length,
+    Compare.lt(0),
+  ),
+  (s) => pipe(
+      String.slice(0, 1),
+      String.toUpper,
+    )(s)
+      ++ String.slice(1, String.length(s), s),
+)
 
 REGEX = {
   NON_WORD_AND_SPACES: "[\\W\\s]",
@@ -54,7 +54,7 @@ slug = pipe(
   String.replace(REGEX.NON_WORD_AND_SPACES, " "),
 )
 
-headingSlug = (meta, index, line) => {
+headingSlug = (_, _, line) => {
   isNotFirstHeading = Fn.both(String.startsWith("##"), String.startsWith("#"), line)
   // there might be a cleaner way of expressing this regexery
   clean = isNotFirstHeading
@@ -73,7 +73,7 @@ headingSlug = (meta, index, line) => {
   return clean
 }
 
-linkFiles = (meta, index, line) => Fn.when(
+linkFiles = (_, _, line) => Fn.when(
   String.match(REGEX.CAPTURING.MADLIB_FILE),
   String.replace(
     REGEX.CAPTURING.MADLIB_FILE,
@@ -81,9 +81,7 @@ linkFiles = (meta, index, line) => Fn.when(
   ),
 )(line)
 
-stringAppend = (a, b) => a ++ b
-
-grabExports = (meta, index, line) => Fn.ifElse(
+grabExports = (meta, _, line) => Fn.ifElse(
   String.match(REGEX.CAPTURING.LIST_ITEM),
   pipe(
     String.replace(REGEX.CAPTURING.LIST_ITEM, "$1"),
@@ -99,47 +97,47 @@ grabExports = (meta, index, line) => Fn.ifElse(
 
 
 main = () => {
-  myVFile = VFile.vfileWithState(
-    SOURCE,
-    [
-      Rule.Rule(
-        Rule.BodyAffect,
-        false,
-        "spirit-gum/readme/title",
-        [Validator.BodyValidator((_, body) => String.contains("^#", body))],
-        [Transformer.BodyStateTransformer((meta, numBody) => ({ ...meta, hasTitle: true }))],
-      ),
-      Rule.Rule(
-        Rule.LineAffect,
-        true,
-        "spirit-gum/readme/headings",
-        [],
-        [
-          Transformer.LineTransformer(headingSlug),
-          Transformer.LineTransformer(linkFiles),
-          Transformer.LineRawTransformer(grabExports),
-        ],
-      ),
-      Rule.Rule(
-        Rule.BodyAffect,
-        false,
-        "spirit-gum/readme/types",
-        [
-          Validator.BodyValidator(
-            (_, body) => pipe(
-              String.toLower,
-              String.contains("# types"),
-            )(body),
-          ),
-        ],
-        [Transformer.BodyStateTransformer((meta, numBody) => ({ ...meta, hasTypes: true }))],
-      ),
-    ],
-    INITIAL_STATE,
-  )
   pipe(
+    VFile.vfileWithState(
+      SOURCE,
+      [
+        Rule.bodyRule(
+          false,
+          "spirit-gum/readme/title",
+          [Validator.ofBody((_, body) => String.contains("^#", body))],
+          [Transformer.ofBodyState((meta, _) => ({ ...meta, hasTitle: true }))],
+        ),
+        Rule.lineRule(
+          true,
+          "spirit-gum/readme/headings",
+          [],
+          [
+            Transformer.ofLine(headingSlug),
+            Transformer.ofLine(linkFiles),
+            Transformer.ofLineRaw(grabExports),
+          ],
+        ),
+        Rule.bodyRule(
+          false,
+          "spirit-gum/readme/types",
+          [
+            Validator.ofBody(
+              (_, body) => pipe(
+                String.toLower,
+                String.contains("# types"),
+              )(body),
+            ),
+          ],
+          [Transformer.ofBodyState((meta, _) => ({ ...meta, hasTypes: true }))],
+        ),
+      ],
+    ),
     map(
-      Template.renderWithConverter(map(Line.render), (src, lines, state) => String.unlines(lines)),
+      pipe(
+        log.main("processed raw"),
+        Template.renderWithConverter(map(Line.render), (_, lines, _) => String.unlines(lines)),
+        log.main("converted"),
+      ),
     ),
     chain(
       pipe(
@@ -149,5 +147,5 @@ main = () => {
       ),
     ),
     fillfull("Barf!", "Yay!"),
-  )(myVFile)
+  )(INITIAL_STATE)
 }

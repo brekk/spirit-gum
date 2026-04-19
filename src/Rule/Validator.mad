@@ -6,6 +6,9 @@ export type Validator a
   = BodyValidator(a -> String -> Boolean)
   | LineValidator(a -> Integer -> String -> Boolean)
 
+export ofBody = BodyValidator
+export ofLine = LineValidator
+
 isBody :: Validator a -> Boolean
 export isBody = where {
   BodyValidator(_) =>
@@ -16,3 +19,7 @@ export isBody = where {
 }
 
 export isLine = Fn.complement(isBody)
+
+
+export lineAlwaysValid = LineValidator((_, _, _) => true)
+export bodyAlwaysValid = BodyValidator((_, _) => true)

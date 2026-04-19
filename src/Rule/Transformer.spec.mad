@@ -1,17 +1,22 @@
-import { caseN2, caseN3, report } from "Study"
+import { report } from "Study"
 
 import Transformer from "@/Rule/Transformer"
 
 
 
-bodyTrans = Transformer.BodyTransformer((meta, body) => body)
-lineTrans = Transformer.LineTransformer((meta, index, line) => line)
-bodyStateTrans = Transformer.BodyStateTransformer((meta, numBody) => meta)
-lineStateTrans = Transformer.LineStateTransformer((meta, index, content) => meta)
-lineRawTrans = Transformer.LineRawTransformer((meta, index, line) => #[meta, line])
+// meta body
+bodyTrans = Transformer.BodyTransformer((_, body) => body)
+// meta index line
+lineTrans = Transformer.LineTransformer((_, _, line) => line)
+// meta numBody
+bodyStateTrans = Transformer.BodyStateTransformer((meta, _) => meta)
+// meta index content
+lineStateTrans = Transformer.LineStateTransformer((meta, _, _) => meta)
+// meta index line
+lineRawTrans = Transformer.LineRawTransformer((meta, _, line) => #[meta, line])
+// meta body
 bodyRawTrans = Transformer.BodyRawTransformer((meta, body) => #[meta, body])
 
-HARNESS_TRANSFORMERS = [bodyTrans]
 
 report(
   Transformer.isBody,

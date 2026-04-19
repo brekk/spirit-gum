@@ -10,10 +10,6 @@ import Validator from "@/Rule/Validator"
 
 
 
-trace = log.rule
-
-
-
 export type RuleAffect = BodyAffect | LineAffect
 
 
@@ -44,7 +40,7 @@ export type Rule a
   )
 
 export bodyRule = Rule(BodyAffect)
-export lineRule = Rule(BodyAffect)
+export lineRule = Rule(LineAffect)
 
 export affect = where {
   Rule(x, _, _, _, _) =>

@@ -1,0 +1,16 @@
+import Test from "Test"
+
+import { tap } from "@/Log"
+
+
+
+Test.test(
+  "tap",
+  () => {
+    fun = (msg, x) => {
+      Test.assertEquals(#[msg, x], #["hey", "test"])
+      return x
+    }
+    return Test.assertEquals(tap(fun, "hey", .cool, { cool: "test" }), { cool: "test" })
+  },
+)

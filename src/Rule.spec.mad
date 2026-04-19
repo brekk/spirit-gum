@@ -1,4 +1,4 @@
-import { caseN2, caseN3, report } from "Study"
+import { caseN2, report } from "Study"
 
 import Rule from "@/Rule"
 import Transformer from "@/Rule/Transformer"
@@ -6,15 +6,12 @@ import Validator from "@/Rule/Validator"
 
 
 
-bodyVal = Validator.BodyValidator((meta, body) => true)
-lineVal = Validator.LineValidator((meta, index, line) => true)
+bodyVal = Validator.BodyValidator((_, _) => true)
+lineVal = Validator.LineValidator((_, _, _) => true)
 
 HARNESS_VALIDATORS = [bodyVal]
 
-bodyTrans = Transformer.BodyTransformer((meta, body) => body)
-lineTrans = Transformer.LineTransformer((meta, index, line) => line)
-bodyStateTrans = Transformer.BodyStateTransformer((meta, numBody) => meta)
-lineStateTrans = Transformer.LineStateTransformer((meta, index, content) => meta)
+bodyTrans = Transformer.BodyTransformer((_, body) => body)
 HARNESS_TRANSFORMERS = [bodyTrans]
 
 
@@ -45,7 +42,7 @@ report(
   caseN2(Rule.validateLine({ testing: true }, 100)),
   "validateLine",
   [
-    #[#["this is a whole line of info", Validator.LineValidator((a, b, c) => true)], true],
-    #[#["this is a whole line of info", Validator.BodyValidator((a, b) => true)], false],
+    #[#["this is a whole line of info", lineVal], true],
+    #[#["this is a whole line of info", bodyVal], false],
   ],
 )

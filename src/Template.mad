@@ -1,8 +1,6 @@
 import type { VFileLine } from "@/Line"
 import type { ConcreteFile } from "@/VFile"
 
-import { fromMaybe } from "Maybe"
-
 import Line from "@/Line"
 import { ConcreteFile } from "@/VFile"
 

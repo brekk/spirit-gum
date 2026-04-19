@@ -1,10 +1,12 @@
 import { Just, Nothing } from "Maybe"
 
-import { caseN4, report } from "Study"
+import { caseN3, caseN4, report } from "Study"
 
 import Errors from "@/Errors"
 import Line from "@/Line"
+import Rule from "@/Rule"
 import Transformer from "@/Rule/Transformer"
+import Validator from "@/Rule/Validator"
 
 
 
@@ -41,10 +43,10 @@ testTransformLine(
 )
 
 RULE_TRANSFORM_HARNESS = [
-  Transformer.LineTransformer((state, index, line) => line ++ " <>"),
-  Transformer.LineStateTransformer((state, index, line) => ({ ...state, one: true })),
+  Transformer.LineTransformer((_, _, line) => line ++ " <>"),
+  Transformer.LineStateTransformer((state, _, _) => ({ ...state, one: true })),
   Transformer.LineRawTransformer(
-    (state, index, line) => #[({ ...state, two: true }), line ++ " " ++ line],
+    (state, _, line) => #[({ ...state, two: true }), line ++ " " ++ line],
   ),
 ]
 
@@ -66,8 +68,8 @@ testTransformLine(
         100,
         "line",
         [
-          Transformer.BodyTransformer((state, bod) => []),
-          Transformer.BodyStateTransformer((state, bod) => ({ ...state, one: true })),
+          Transformer.BodyTransformer((_, _) => []),
+          Transformer.BodyStateTransformer((state, _) => ({ ...state, one: true })),
           Transformer.BodyRawTransformer((state, bod) => #[{ ...state, two: true }, bod]),
         ],
       ],
@@ -76,15 +78,82 @@ testTransformLine(
   ],
 )
 
-/*
-report(caseN3(Line.processRules), "Line.processRules", [
-  #[
+testProcessRules = report(caseN3(Line.processRules))
+
+testProcessRules(
+  "Line.processRules - applies transformation when valid",
+  [
     #[
-Rule.Rule(Rule.LineAffect, )
-    ]
-  ]
-])
-*/
+      #[
+        [
+          Rule.lineRule(
+            false,
+            "test/spirit-gum/Line/processRules",
+            [Validator.lineAlwaysValid],
+            RULE_TRANSFORM_HARNESS,
+          ),
+        ],
+        { one: false, two: false },
+        #[100, "line"],
+      ],
+      #[{ one: true, two: true }, Line.ValidLine(100, "line <> line <>")],
+    ],
+  ],
+)
+
+testProcessRules(
+  "Line.processRules - does nothing with no rules",
+  [
+    #[
+      #[[], { one: false, two: false }, #[100, "line"]],
+      #[{ one: false, two: false }, Line.ValidLine(100, "line")],
+    ],
+  ],
+)
+
+testProcessRules(
+  "Line.processRules - does nothing when validator says no",
+  [
+    #[
+      #[
+        [
+          Rule.lineRule(
+            false,
+            "test/spirit-gum/Line/processRules2",
+            [Validator.LineValidator((_, _, _) => false)],
+            [],
+          ),
+        ],
+        { one: false, two: false },
+        #[100, "line"],
+      ],
+      #[
+        { one: false, two: false },
+        Line.InvalidLine(100, Errors.DynamicError("test/spirit-gum/Line/processRules2")),
+      ],
+    ],
+  ],
+)
+testProcessRules(
+  "Line.processRules - ignores body rules",
+  [
+    #[
+      #[
+        [
+          Rule.bodyRule(
+            false,
+            "test/spirit-gum/Line/processRules3",
+            [Validator.BodyValidator((_, _) => true)],
+            [],
+          ),
+        ],
+        { one: false, two: false },
+        #[100, "line"],
+      ],
+      #[{ one: false, two: false }, Line.ValidLine(100, "line")],
+    ],
+  ],
+)
 
 report(
   Line.validOrEmptyLine(100),

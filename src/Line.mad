@@ -97,7 +97,10 @@ export processRules = (orules, ostate, olineTuple) => {
   ) {
     where(loopState.failReason) {
       Just(whyFail) =>
-        #[state, (loopState.valid ? validOrEmptyLine(index, line) : InvalidLine(index, whyFail))]
+        log.line(
+          "processed rules for line:",
+          #[state, (loopState.valid ? validOrEmptyLine(index, line) : InvalidLine(index, whyFail))],
+        )
 
       _ =>
         #[state, validOrEmptyLine(index, line)]
@@ -105,6 +108,7 @@ export processRules = (orules, ostate, olineTuple) => {
   } else {
     where(rules) {
       [] =>
+        // we cannot get here because of the `hasNoRemainingLineRules` clause of the previous branch
         recurseRules(index, line, state, loopState, [])
 
       [rule, ...rest] =>
@@ -118,23 +122,37 @@ export processRules = (orules, ostate, olineTuple) => {
               lineTuple = valid ? transformLine(state, index, line, transformers) : #[state, line]
               return where(lineTuple) {
                 #[finalState, newLine] =>
-                  recurseRules(
-                    index,
-                    newLine,
-                    finalState,
-                    { ...loopState, valid, failReason },
-                    rest,
+                  log.line(
+                    "processed rule: " ++ id,
+                    recurseRules(
+                      index,
+                      newLine,
+                      finalState,
+                      { ...loopState, valid, failReason },
+                      rest,
+                    ),
                   )
               }
             }
 
-          Rule.Rule(_, _, id, _, _) =>
+          _ =>
+            // we are filtering at the base call site, so we cannot get here
             recurseRules(index, line, state, loopState, rest)
         }
     }
   }
-  return where(olineTuple) {
-    #[oindex, oline] =>
-      recurseRules(oindex, oline, ostate, { failReason: Nothing, done: false, valid: true }, orules)
-  }
+
+  return pipe(
+    log.line("processing rules for line:"),
+    where {
+      #[oindex, oline] =>
+        recurseRules(
+          oindex,
+          oline,
+          ostate,
+          { failReason: Nothing, done: false, valid: true },
+          List.filter(Rule.isLine, orules),
+        )
+    },
+  )(olineTuple)
 }
