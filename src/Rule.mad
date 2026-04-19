@@ -14,7 +14,7 @@ trace = log.rule
 
 
 
-export type RuleAffect = BodyRule | LineRule
+export type RuleAffect = BodyAffect | LineAffect
 
 
 
@@ -42,6 +42,9 @@ export type Rule a
     // transformers
     List (Transformer a),
   )
+
+export bodyRule = Rule(BodyAffect)
+export lineRule = Rule(BodyAffect)
 
 export affect = where {
   Rule(x, _, _, _, _) =>
@@ -76,11 +79,11 @@ export bodyStateTransformers = select(transformers, Transformer.isBodyState)
 export lineStateTransformers = select(transformers, Transformer.isLineState)
 export lineRawTransformers = select(transformers, Transformer.isLineRaw)
 
-export isBodyRule = pipe(
+export isBody = pipe(
   affect,
-  Fn.equals(BodyRule),
+  Fn.equals(BodyAffect),
 )
-export isLineRule = Fn.complement(isBodyRule)
+export isLine = Fn.complement(isBody)
 
 validateLine :: a -> Integer -> String -> Validator a -> Boolean
 export validateLine = (meta, lineNum, currentLine, check) => where(check) {

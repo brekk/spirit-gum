@@ -82,7 +82,7 @@ validateBody :: a -> List (Rule a) -> String -> #[Boolean, String]
 export validateBody = (state, rules, body) => pipe(
   List.all(
     where {
-      Rule.Rule(Rule.BodyRule, fixable, id, vals, trans) =>
+      Rule.Rule(Rule.BodyAffect, fixable, id, vals, trans) =>
         tapped.vfileV(
           id,
           (success) => success ? "passed!" : "failed",
@@ -145,7 +145,7 @@ encodeStateByLine = (state, rules, lines) => {
 modifyBodyByRules :: List (Rule a) -> a -> String -> #[a, List VFileLine]
 export modifyBodyByRules = (rules, state, body) => {
   bodyTransformers = pipe(
-    List.filter(Rule.isBodyRule),
+    List.filter(Rule.isBody),
     map(tapped.vfileR("loading rule:", Rule.id)),
     chain(Rule.transformers),
   )(rules)

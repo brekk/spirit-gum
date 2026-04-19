@@ -1,0 +1,90 @@
+import { caseN2, caseN3, report } from "Study"
+
+import Transformer from "@/Rule/Transformer"
+
+
+
+bodyTrans = Transformer.BodyTransformer((meta, body) => body)
+lineTrans = Transformer.LineTransformer((meta, index, line) => line)
+bodyStateTrans = Transformer.BodyStateTransformer((meta, numBody) => meta)
+lineStateTrans = Transformer.LineStateTransformer((meta, index, content) => meta)
+lineRawTrans = Transformer.LineRawTransformer((meta, index, line) => #[meta, line])
+bodyRawTrans = Transformer.BodyRawTransformer((meta, body) => #[meta, body])
+
+HARNESS_TRANSFORMERS = [bodyTrans]
+
+report(
+  Transformer.isBody,
+  "Transformer.isBody",
+  [
+    #[bodyTrans, true],
+    #[lineTrans, false],
+    #[bodyStateTrans, false],
+    #[lineStateTrans, false],
+    #[lineRawTrans, false],
+    #[bodyRawTrans, false],
+  ],
+)
+report(
+  Transformer.isLine,
+  "Transformer.isLine",
+  [
+    #[bodyTrans, false],
+    #[lineTrans, true],
+    #[bodyStateTrans, false],
+    #[lineStateTrans, false],
+    #[lineRawTrans, false],
+    #[bodyRawTrans, false],
+  ],
+)
+report(
+  Transformer.isBodyState,
+  "Transformer.isBodyState",
+  [
+    #[bodyTrans, false],
+    #[lineTrans, false],
+    #[bodyStateTrans, true],
+    #[lineStateTrans, false],
+    #[lineRawTrans, false],
+    #[bodyRawTrans, false],
+  ],
+)
+
+report(
+  Transformer.isLineState,
+  "Transformer.isLineState",
+  [
+    #[bodyTrans, false],
+    #[lineTrans, false],
+    #[bodyStateTrans, false],
+    #[lineStateTrans, true],
+    #[lineRawTrans, false],
+    #[bodyRawTrans, false],
+  ],
+)
+
+report(
+  Transformer.isLineRaw,
+  "Transformer.isLineRaw",
+  [
+    #[bodyTrans, false],
+    #[lineTrans, false],
+    #[bodyStateTrans, false],
+    #[lineStateTrans, false],
+    #[lineRawTrans, true],
+    #[bodyRawTrans, false],
+  ],
+)
+
+report(
+  Transformer.isBodyRaw,
+  "Transformer.isBodyRaw",
+  [
+    #[bodyTrans, false],
+    #[lineTrans, false],
+    #[bodyStateTrans, false],
+    #[lineStateTrans, false],
+    #[lineRawTrans, false],
+    #[bodyRawTrans, true],
+  ],
+)

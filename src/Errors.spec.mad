@@ -1,0 +1,14 @@
+import Study from "Study"
+
+import Errors from "@/Errors"
+
+
+
+Study.report(
+  Study.caseN2(Errors.StaticError),
+  "StaticError",
+  [
+    #[#[Errors.VFInvalidSource, Errors.ERRORS.INVALID_SOURCE], Errors.InvalidSource],
+    #[#[Errors.VFInvalidShape, Errors.ERRORS.INVALID_SHAPE], Errors.InvalidShape],
+  ],
+)

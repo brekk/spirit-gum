@@ -1,0 +1,93 @@
+import { Just, Nothing } from "Maybe"
+
+import { caseN4, report } from "Study"
+
+import Errors from "@/Errors"
+import Line from "@/Line"
+import Transformer from "@/Rule/Transformer"
+
+
+
+report(
+  Line.getLineNumber,
+  "Line.getLineNumber - grabs the one value that unifies all lines",
+  [
+    #[Line.InvalidLine(1000, Errors.DynamicError("Barf smells")), 1000],
+    #[Line.ValidLine(1000, "Barf smells"), 1000],
+    #[Line.EmptyLine(1000), 1000],
+  ],
+)
+report(Line.hasNoRemainingLineRules, "Line.hasNoRemainingLineRules", [#[[], true]])
+report(
+  Line.safeRender,
+  "Line.safeRender - render maybe-wrapped values",
+  [
+    #[Line.ValidLine(100, "cool"), Just("cool")],
+    #[Line.InvalidLine(100, Errors.DynamicError("hooray")), Nothing],
+  ],
+)
+report(
+  Line.render,
+  "Line.render - coerces everything to strings, empty ones for non-ValidLines",
+  [
+    #[Line.ValidLine(100, "cool"), "cool"],
+    #[Line.InvalidLine(100, Errors.DynamicError("hooray")), ""],
+  ],
+)
+testTransformLine = report(caseN4(Line.transformLine))
+testTransformLine(
+  "Line.transformLine - glues raw state and line when given no transformations",
+  [#[#[{ testing: true }, 100, "line", []], #[{ testing: true }, "line"]]],
+)
+
+RULE_TRANSFORM_HARNESS = [
+  Transformer.LineTransformer((state, index, line) => line ++ " <>"),
+  Transformer.LineStateTransformer((state, index, line) => ({ ...state, one: true })),
+  Transformer.LineRawTransformer(
+    (state, index, line) => #[({ ...state, two: true }), line ++ " " ++ line],
+  ),
+]
+
+testTransformLine(
+  "Line.transformLine - applies transformations in order",
+  [
+    #[
+      #[{ one: false, two: false }, 100, "line", RULE_TRANSFORM_HARNESS],
+      #[{ one: true, two: true }, "line <> line <>"],
+    ],
+  ],
+)
+testTransformLine(
+  "Line.transformLine - body transformers are ignored",
+  [
+    #[
+      #[
+        { one: false, two: false },
+        100,
+        "line",
+        [
+          Transformer.BodyTransformer((state, bod) => []),
+          Transformer.BodyStateTransformer((state, bod) => ({ ...state, one: true })),
+          Transformer.BodyRawTransformer((state, bod) => #[{ ...state, two: true }, bod]),
+        ],
+      ],
+      #[{ one: false, two: false }, "line"],
+    ],
+  ],
+)
+
+/*
+report(caseN3(Line.processRules), "Line.processRules", [
+  #[
+    #[
+Rule.Rule(Rule.LineAffect, )
+    ]
+  ]
+])
+*/
+
+report(
+  Line.validOrEmptyLine(100),
+  "Line.validOrEmptyLine - easy constructor for the non-InvalidLines",
+  [#["", Line.EmptyLine(100)], #["yo", Line.ValidLine(100, "yo")]],
+)

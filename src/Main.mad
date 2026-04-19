@@ -103,14 +103,14 @@ main = () => {
     SOURCE,
     [
       Rule.Rule(
-        Rule.BodyRule,
+        Rule.BodyAffect,
         false,
         "spirit-gum/readme/title",
         [Validator.BodyValidator((_, body) => String.contains("^#", body))],
         [Transformer.BodyStateTransformer((meta, numBody) => ({ ...meta, hasTitle: true }))],
       ),
       Rule.Rule(
-        Rule.LineRule,
+        Rule.LineAffect,
         true,
         "spirit-gum/readme/headings",
         [],
@@ -121,7 +121,7 @@ main = () => {
         ],
       ),
       Rule.Rule(
-        Rule.BodyRule,
+        Rule.BodyAffect,
         false,
         "spirit-gum/readme/types",
         [

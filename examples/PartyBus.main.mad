@@ -32,7 +32,7 @@ main = () => {
     SOURCE,
     [
       Rule.Rule(
-        Rule.BodyRule,
+        Rule.BodyAffect,
         false,
         "party-bus/opinionated-log-pattern",
         [

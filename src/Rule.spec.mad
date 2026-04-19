@@ -18,9 +18,10 @@ lineStateTrans = Transformer.LineStateTransformer((meta, index, content) => meta
 HARNESS_TRANSFORMERS = [bodyTrans]
 
 
-HARNESS = Rule.Rule(Rule.BodyRule, false, "smoke-test", HARNESS_VALIDATORS, HARNESS_TRANSFORMERS)
+HARNESS = Rule.Rule(Rule.BodyAffect, false, "smoke-test", HARNESS_VALIDATORS, HARNESS_TRANSFORMERS)
 
-report(Rule.affect, "affect", [#[HARNESS, Rule.BodyRule]])
+
+report(Rule.affect, "affect", [#[HARNESS, Rule.BodyAffect]])
 report(Rule.fixable, "fixable", [#[HARNESS, false]])
 report(Rule.id, "id", [#[HARNESS, "smoke-test"]])
 report(Rule.validators, "validators", [#[HARNESS, HARNESS_VALIDATORS]])
@@ -31,29 +32,20 @@ report(Validator.isBody, "Validator.isBody", [#[bodyVal, true], #[lineVal, false
 
 report(Rule.bodyTransformers, "bodyTransformers", [#[HARNESS, HARNESS_TRANSFORMERS]])
 report(Rule.lineTransformers, "lineTransformers", [#[HARNESS, []]])
-report(
-  Transformer.isBody,
-  "Transformer.isBody",
-  [#[bodyTrans, true], #[lineTrans, false], #[bodyStateTrans, false], #[lineStateTrans, false]],
-)
-report(
-  Transformer.isLine,
-  "Transformer.isLine",
-  [#[bodyTrans, false], #[lineTrans, true], #[bodyStateTrans, false], #[lineStateTrans, false]],
-)
-report(
-  Transformer.isBodyState,
-  "Transformer.isBodyState",
-  [#[bodyTrans, false], #[lineTrans, false], #[bodyStateTrans, true], #[lineStateTrans, false]],
-)
-report(
-  Transformer.isLineState,
-  "Transformer.isLineState",
-  [#[bodyTrans, false], #[lineTrans, false], #[bodyStateTrans, false], #[lineStateTrans, true]],
-)
+report(Rule.lineRawTransformers, "lineRawTransformers", [#[HARNESS, []]])
+
 report(Rule.lineStateTransformers, "lineStateTransformers", [#[HARNESS, []]])
 report(Rule.bodyStateTransformers, "bodyStateTransformers", [#[HARNESS, []]])
 
 
-report(Rule.isBodyRule, "isBodyRule", [#[HARNESS, true]])
-report(Rule.isLineRule, "isLineRule", [#[HARNESS, false]])
+report(Rule.isBody, "isBody", [#[HARNESS, true]])
+report(Rule.isLine, "isLine", [#[HARNESS, false]])
+
+report(
+  caseN2(Rule.validateLine({ testing: true }, 100)),
+  "validateLine",
+  [
+    #[#["this is a whole line of info", Validator.LineValidator((a, b, c) => true)], true],
+    #[#["this is a whole line of info", Validator.BodyValidator((a, b) => true)], false],
+  ],
+)
