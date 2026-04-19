@@ -44,7 +44,11 @@ capitalize = Fn.when(
 
 REGEX = {
   NON_WORD_AND_SPACES: "[\\W\\s]",
-  CAPTURING: { HEADING: "^(#*)\\s*(.*)", MADLIB_FILE: "([\\w\\.]*)\\.mad", LIST_ITEM: " - (\\w*)" },
+  CAPTURING: {
+    HEADING: "^(#*)\\s*(.*)",
+    MADLIB_FILE: "\\b([\\w\\/\\.]*)\\.mad",
+    LIST_ITEM: " - (\\w*)",
+  },
 }
 
 slug = pipe(
@@ -55,6 +59,7 @@ slug = pipe(
 )
 
 headingSlug = (_, _, line) => {
+  // don't apply to top-level headings
   isNotFirstHeading = Fn.both(String.startsWith("##"), String.startsWith("#"), line)
   // there might be a cleaner way of expressing this regexery
   clean = isNotFirstHeading
@@ -73,13 +78,20 @@ headingSlug = (_, _, line) => {
   return clean
 }
 
-linkFiles = (_, _, line) => Fn.when(
-  String.match(REGEX.CAPTURING.MADLIB_FILE),
-  String.replace(
-    REGEX.CAPTURING.MADLIB_FILE,
-    "[$1.mad](//github.com/brekk/spirit-gum/blob/main/src/$1.mad)",
+hasMadlibFile = String.match(REGEX.CAPTURING.MADLIB_FILE)
+replaceMadlibFileByPattern = String.replace(REGEX.CAPTURING.MADLIB_FILE)
+hasSlash = String.contains("/")
+
+linkMadFilesToDomainWithPath = (domain, path, _, _, line) => Fn.when(
+  hasMadlibFile,
+  Fn.ifElse(
+    hasSlash,
+    replaceMadlibFileByPattern("[$1.mad](" ++ domain ++ path ++ "/$1.mad)"),
+    replaceMadlibFileByPattern("[$1.mad](" ++ domain ++ path ++ "/src/$1.mad)"),
   ),
 )(line)
+linkMadFilesToGithub = linkMadFilesToDomainWithPath("//github.com")
+linkMadFiles = linkMadFilesToGithub("/brekk/spirit-gum/blob/main")
 
 grabExports = (meta, _, line) => Fn.ifElse(
   String.match(REGEX.CAPTURING.LIST_ITEM),
@@ -113,7 +125,7 @@ main = () => {
           [],
           [
             Transformer.ofLine(headingSlug),
-            Transformer.ofLine(linkFiles),
+            Transformer.ofLine(linkMadFiles),
             Transformer.ofLineRaw(grabExports),
           ],
         ),

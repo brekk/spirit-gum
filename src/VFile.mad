@@ -37,6 +37,13 @@ export type ConcreteFile state
     state,
   )
 
+instance Functor ConcreteFile {
+  map = (f, m) => where(m) {
+    ConcreteFile(i, b, x) =>
+      ConcreteFile(i, b, f(x))
+  }
+}
+
 export forceVFileError = Wish.mapRej((_) => Errors.InvalidSource)
 
 

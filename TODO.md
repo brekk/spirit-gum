@@ -1,0 +1,4 @@
+- main files
+- write a converter for generating logs for partybus
+- entities! - there should be a means of expressing "this entity [starts with this matcher, and ends with this matcher], and I want to capture the lines in between as a structured object"
+- we should wrap the ConcreteFile so we can map it
