@@ -1,0 +1,151 @@
+import Compare from "Compare"
+import File from "File"
+import Fn from "Function"
+import IO from "IO"
+import List from "List"
+import String from "String"
+import Wish from "Wish"
+
+import Line from "@/Line"
+import { log } from "@/Log"
+import Rule from "@/Rule"
+import Transformer from "@/Rule/Transformer"
+import Validator from "@/Rule/Validator"
+import Template from "@/Template"
+import VFile from "@/VFile"
+
+
+
+fillfull = (badMsg, goodMsg, wish) => Wish.fulfill(
+  (bad) => {
+    IO.pTrace(badMsg, bad)
+  },
+  (good) => {
+    IO.pTrace(goodMsg, good)
+  },
+  wish,
+)
+
+
+SOURCE = "./examples/unprocessed-readme.md"
+INITIAL_STATE = { hasTitle: false, hasTypes: false, types: [], constructors: [] }
+
+capitalize = Fn.when(
+  pipe(
+    String.length,
+    Compare.lt(0),
+  ),
+  (s) => pipe(
+      String.slice(0, 1),
+      String.toUpper,
+    )(s)
+      ++ String.slice(1, String.length(s), s),
+)
+
+REGEX = {
+  NON_WORD_AND_SPACES: "[\\W\\s]",
+  CAPTURING: { HEADING: "^(#*)\\s*(.*)", MADLIB_FILE: "([\\w\\.]*)\\.mad", LIST_ITEM: " - (\\w*)" },
+}
+
+slug = pipe(
+  String.toLower,
+  capitalize,
+  String.trim,
+  String.replace(REGEX.NON_WORD_AND_SPACES, " "),
+)
+
+headingSlug = (_, _, line) => {
+  isNotFirstHeading = Fn.both(String.startsWith("##"), String.startsWith("#"), line)
+  // there might be a cleaner way of expressing this regexery
+  clean = isNotFirstHeading
+    ? pipe(
+      String.replace(REGEX.CAPTURING.HEADING, "$1<>$2"),
+      String.split("<>"),
+      where {
+        [a, b] =>
+          a ++ " " ++ slug(b)
+
+        _ =>
+          ""
+      },
+    )(line)
+    : line
+  return clean
+}
+
+linkFiles = (_, _, line) => Fn.when(
+  String.match(REGEX.CAPTURING.MADLIB_FILE),
+  String.replace(
+    REGEX.CAPTURING.MADLIB_FILE,
+    "[$1.mad](//github.com/brekk/spirit-gum/blob/main/src/$1.mad)",
+  ),
+)(line)
+
+grabExports = (meta, _, line) => Fn.ifElse(
+  String.match(REGEX.CAPTURING.LIST_ITEM),
+  pipe(
+    String.replace(REGEX.CAPTURING.LIST_ITEM, "$1"),
+    String.trim,
+    (item) => {
+      statemod = { ...meta, types: List.append(item, meta.types) }
+      return #[statemod, "  - `" ++ item ++ "`"]
+    },
+  ),
+  Fn.always(#[meta, line]),
+)(line)
+
+
+
+main = () => {
+  pipe(
+    VFile.vfileWithState(
+      SOURCE,
+      [
+        Rule.bodyRule(
+          false,
+          "spirit-gum/readme/title",
+          [Validator.ofBody((_, body) => String.contains("^#", body))],
+          [Transformer.ofBodyState((meta, _) => ({ ...meta, hasTitle: true }))],
+        ),
+        Rule.lineRule(
+          true,
+          "spirit-gum/readme/headings",
+          [],
+          [
+            Transformer.ofLine(headingSlug),
+            Transformer.ofLine(linkFiles),
+            Transformer.ofLineRaw(grabExports),
+          ],
+        ),
+        Rule.bodyRule(
+          false,
+          "spirit-gum/readme/types",
+          [
+            Validator.ofBody(
+              (_, body) => pipe(
+                String.toLower,
+                String.contains("# types"),
+              )(body),
+            ),
+          ],
+          [Transformer.ofBodyState((meta, _) => ({ ...meta, hasTypes: true }))],
+        ),
+      ],
+    ),
+    map(
+      pipe(
+        log.main("processed raw"),
+        Template.renderWithConverter(map(Line.render), (_, lines, _) => String.unlines(lines)),
+        log.main("converted"),
+      ),
+    ),
+    chain(
+      pipe(
+        File.write("./README.md"),
+        VFile.forceVFileError,
+        map(Fn.always("Updated README!")),
+      ),
+    ),
+    fillfull("Barf!", "Yay!"),
+  )(INITIAL_STATE)
+}
