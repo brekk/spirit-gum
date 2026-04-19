@@ -1,3 +1,4 @@
+import type { Maybe } from "Maybe"
 import type { Wish } from "Wish"
 
 import type { VFileError } from "@/Errors"
@@ -8,6 +9,7 @@ import type { Validator } from "@/Rule/Validator"
 
 import File from "File"
 import List from "List"
+import { Just, Nothing } from "Maybe"
 import String from "String"
 import Wish from "Wish"
 
@@ -37,24 +39,16 @@ export type ConcreteFile state
     state,
   )
 
-instance Functor ConcreteFile {
-  map = (f, m) => where(m) {
-    ConcreteFile(i, b, x) =>
-      ConcreteFile(i, b, f(x))
-  }
+export mapState = (f, m) => where(m) {
+  ConcreteFile(i, b, x) =>
+    ConcreteFile(i, b, f(x))
+}
+export mapLines = (f, m) => where(m) {
+  ConcreteFile(i, b, x) =>
+    ConcreteFile(i, f(b), x)
 }
 
 export forceVFileError = Wish.mapRej((_) => Errors.InvalidSource)
-
-
-
-export type VirtualFile a
-  = VFile(
-    // source
-    String,
-    // rules
-    List (Rule a),
-  )
 
 
 bodyToNumberedLines :: String -> List NumberedLine
@@ -183,20 +177,27 @@ export concretizeBody = (src, rules, state, raw) => pipe(
   },
 )(raw)
 
+cfileWithState :: List (Rule a) -> a -> String -> #[Boolean, ConcreteFile a]
+export cfileWithState = (rules, state, src) => pipe(
+  validateBody(state, rules),
+  where {
+    #[valid, body] =>
+      // we could handle validity here, but Maybes are cumbersome if we don't need them
+      #[valid, concretizeBody(src, rules, state, body)]
+  },
+)(src)
+
 
 vfileWithState :: String -> List (Rule a) -> a -> Wish VFileError (ConcreteFile a)
 export vfileWithState = (src, rules, state) => pipe(
   File.read,
   forceVFileError,
-  map(validateBody(state, rules)),
+  map(cfileWithState(rules, state)),
   chain(
     where {
-      #[valid, body] =>
+      #[valid, cFile] =>
         if (valid) {
-          pipe(
-            concretizeBody(src, rules, state),
-            Wish.good,
-          )(body)
+          Wish.good(cFile)
         } else {
           Wish.bad(Errors.InvalidShape)
         }

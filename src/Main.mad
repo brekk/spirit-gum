@@ -132,6 +132,7 @@ main = () => {
         ),
       ],
     ),
+    // Wish VFileError (ConcreteFile a)
     map(
       pipe(
         log.main("processed raw"),

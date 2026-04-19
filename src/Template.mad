@@ -2,7 +2,7 @@ import type { VFileLine } from "@/Line"
 import type { ConcreteFile } from "@/VFile"
 
 import Line from "@/Line"
-import { ConcreteFile } from "@/VFile"
+import VFile from "@/VFile"
 
 
 
@@ -20,7 +20,7 @@ export type FileTemplate a
 
 renderWithConverter :: (List VFileLine -> List String) -> Renderer a -> ConcreteFile a -> String
 export renderWithConverter = (lineConverter, renderer, raw) => where(raw) {
-  ConcreteFile(srcPath, lines, state) =>
+  VFile.ConcreteFile(srcPath, lines, state) =>
     renderer(srcPath, lineConverter(lines), state)
 }
 
