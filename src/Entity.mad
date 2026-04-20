@@ -10,8 +10,11 @@ import String from "String"
 alias NumberedLine = #[Integer, String]
 export alias Matcher a = a -> NumberedLine -> Boolean
 
-type EntityMatcher a = LineMatcher(Matcher a) | SequentialMatcher(Matcher a, Matcher a)
-type Entity a = Entity(String, EntityMatcher a, List NumberedLine)
+export type EntityMatcher a = LineMatcher(Matcher a) | SequentialMatcher(Matcher a, Matcher a)
+export type Entity a = Entity(String, EntityMatcher a, List NumberedLine)
+
+export matchLine = LineMatcher
+export matchSequence = SequentialMatcher
 
 name :: Entity a -> String
 export name = where {
@@ -40,4 +43,5 @@ export body = where {
     x
 }
 
-export type Extract a = Extract(List NumberedLine -> #[a, String])
+export type Extractor a = Extractor(List NumberedLine -> #[a, String])
+export extractor = Extractor

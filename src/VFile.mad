@@ -1,6 +1,7 @@
 import type { Maybe } from "Maybe"
 import type { Wish } from "Wish"
 
+import type { Entity, EntityMatcher, Extractor } from "@/Entity"
 import type { VFileError } from "@/Errors"
 import type { VFileLine } from "@/Line"
 import type { Rule } from "@/Rule"
@@ -38,6 +39,7 @@ export type ConcreteFile state
     // the metadata record
     state,
   )
+
 
 export mapState = (f, m) => where(m) {
   ConcreteFile(i, b, x) =>
@@ -168,6 +170,9 @@ export modifyBodyByRules = (rules, state, body) => {
 
 export alias Processor state = String -> List (Rule a) -> a -> String -> ConcreteFile state
 
+// somewhere we need to convert our entities into coherent rules
+// this should be trivial for the LineMatcher values
+
 concretizeBody :: Processor a
 export concretizeBody = (src, rules, state, raw) => pipe(
   modifyBodyByRules(rules, state),
@@ -176,6 +181,18 @@ export concretizeBody = (src, rules, state, raw) => pipe(
       ConcreteFile(src, ratifiedBod, newState)
   },
 )(raw)
+
+export type VirtualFile state
+  = VirtualFile(
+    // name
+    String,
+    // rules
+    List (Rule state),
+    // entities,
+    List (Entity state),
+    // inner shape
+    ConcreteFile state,
+  )
 
 cfileWithState :: String -> List (Rule a) -> a -> String -> #[Boolean, ConcreteFile a]
 export cfileWithState = (srcPath, rules, state, rawBod) => pipe(
@@ -187,10 +204,46 @@ export cfileWithState = (srcPath, rules, state, rawBod) => pipe(
   },
 )(rawBod)
 
-export alias VFile a = Wish VFileError (ConcreteFile a)
+vfileWithState :: String
+  -> List (Entity a)
+  -> String
+  -> List (Rule a)
+  -> a
+  -> String
+  -> #[Boolean, VirtualFile a]
+export vfileWithState = (vFileName, entities, srcPath, rules, state, rawBod) => pipe(
+  validateBody(state, rules),
+  where {
+    #[valid, body] =>
+      #[valid, VirtualFile(vFileName, rules, entities, concretizeBody(srcPath, rules, state, body))]
+  },
+)(rawBod)
 
-vfileWithState :: String -> List (Rule a) -> a -> VFile a
-export vfileWithState = (src, rules, state) => pipe(
+
+export alias VFile a = Wish VFileError (VirtualFile a)
+
+vFileFromPath :: String -> List (Entity a) -> String -> List (Rule a) -> a -> VFile a
+export vFileFromPath = (name, entities, src, rules, state) => pipe(
+  File.read,
+  forceVFileError,
+  map(vfileWithState(name, entities, src, rules, state)),
+  chain(
+    where {
+      #[valid, cFile] =>
+        if (valid) {
+          Wish.good(cFile)
+        } else {
+          Wish.bad(Errors.InvalidShape)
+        }
+    },
+  ),
+)(src)
+
+
+export alias WishCFile a = Wish VFileError (ConcreteFile a)
+
+fromPath :: String -> List (Rule a) -> a -> WishCFile a
+export fromPath = (src, rules, state) => pipe(
   File.read,
   forceVFileError,
   map(cfileWithState(src, rules, state)),

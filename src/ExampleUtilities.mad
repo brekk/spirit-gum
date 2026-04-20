@@ -1,0 +1,71 @@
+import Compare from "Compare"
+import File from "File"
+import Fn from "Function"
+import IO from "IO"
+import List from "List"
+import String from "String"
+import Wish from "Wish"
+
+import Line from "@/Line"
+import { log } from "@/Log"
+import Rule from "@/Rule"
+import Transformer from "@/Rule/Transformer"
+import Validator from "@/Rule/Validator"
+import Template from "@/Template"
+import VFile from "@/VFile"
+
+
+
+export fillfull = (badMsg, goodMsg, wish) => Wish.fulfill(
+  (bad) => {
+    IO.pTrace(badMsg, bad)
+  },
+  (good) => {
+    IO.pTrace(goodMsg, good)
+  },
+  wish,
+)
+
+export capitalize = Fn.when(
+  pipe(
+    String.length,
+    Compare.lt(0),
+  ),
+  (s) => pipe(
+      String.slice(0, 1),
+      String.toUpper,
+    )(s)
+      ++ String.slice(1, String.length(s), s),
+)
+
+export REGEX = {
+  NON_WORD_AND_SPACES: "[\\W\\s]",
+  CAPTURING: {
+    HEADING: "^(#*)\\s*(.*)",
+    MADLIB_FILE: "\\b([\\w\\/\\.]*)\\.mad",
+    LIST_ITEM: " - (\\w*)",
+  },
+}
+
+export slug = pipe(
+  String.toLower,
+  capitalize,
+  String.trim,
+  String.replace(REGEX.NON_WORD_AND_SPACES, " "),
+)
+
+export hasMadlibFile = String.match(REGEX.CAPTURING.MADLIB_FILE)
+export replaceMadlibFileByPattern = String.replace(REGEX.CAPTURING.MADLIB_FILE)
+export hasSlash = String.contains("/")
+
+export linkMadFilesToDomainWithPath = (domain, path, _, _, line) => Fn.when(
+  hasMadlibFile,
+  Fn.ifElse(
+    hasSlash,
+    replaceMadlibFileByPattern("[$1.mad](" ++ domain ++ path ++ "/$1.mad)"),
+    replaceMadlibFileByPattern("[$1.mad](" ++ domain ++ path ++ "/src/$1.mad)"),
+  ),
+)(line)
+
+
+export linkMadFilesToGithub = linkMadFilesToDomainWithPath("//github.com")

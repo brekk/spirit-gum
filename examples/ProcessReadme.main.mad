@@ -110,7 +110,7 @@ grabExports = (meta, _, line) => Fn.ifElse(
 
 main = () => {
   pipe(
-    VFile.vfileWithState(
+    VFile.fromPath(
       SOURCE,
       [
         Rule.bodyRule(
