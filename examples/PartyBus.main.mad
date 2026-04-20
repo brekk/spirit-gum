@@ -6,21 +6,13 @@ import List from "List"
 import String from "String"
 import Wish from "Wish"
 
+import Shared from "@/ExampleUtilities"
 import { log } from "@/Log"
 import Rule from "@/Rule"
+import Transformer from "@/Rule/Transformer"
+import Validator from "@/Rule/Validator"
 import VFile from "@/VFile"
 
-
-
-fillfull = (badMsg, goodMsg, wish) => Wish.fulfill(
-  (bad) => {
-    IO.pTrace(badMsg, bad)
-  },
-  (good) => {
-    IO.pTrace(goodMsg, good)
-  },
-  wish,
-)
 
 
 SOURCE = "./src/Log.mad"
@@ -28,16 +20,15 @@ INITIAL_STATE = { opinionated: false }
 
 
 main = () => {
-  myVFile = VFile.vfileWithState(
+  myVFile = VFile.fromPath(
     SOURCE,
     [
-      Rule.Rule(
-        Rule.BodyAffect,
+      Rule.bodyRule(
         false,
         "party-bus/opinionated-log-pattern",
         [
-          Rule.BodyValidator(
-            (meta, body) => {
+          Validator.ofBody(
+            (_, body) => {
               hasBase = String.contains("export BASE", body)
               hasTags = String.contains("export TAGS", body)
               hasLog = String.contains("export log", body)
@@ -47,10 +38,10 @@ main = () => {
             },
           ),
         ],
-        [Rule.BodyStateTransformer((meta, numBody) => ({ ...meta, opinionated: true }))],
+        [Transformer.BodyStateTransformer((meta, _) => ({ ...meta, opinionated: true }))],
       ),
     ],
     INITIAL_STATE,
   )
-  fillfull("Barf!", "Yay!", myVFile)
+  Shared.fillfull("Barf!", "Yay!", myVFile)
 }

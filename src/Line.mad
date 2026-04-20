@@ -89,7 +89,7 @@ export validOrEmptyLine = (idx, x) => x == "" ? EmptyLine(idx) : ValidLine(idx, 
 
 
 processRules :: List (Rule a) -> a -> #[Integer, String] -> #[a, VFileLine]
-export processRules = (orules, ostate, olineTuple) => {
+export processRules = (_rules, _state, _lineTuple) => {
   recurseRules :: Integer -> String -> a -> LoopState -> List (Rule a) -> #[a, VFileLine]
   recurseRules = (index, line, state, loopState, rules) => if (
     loopState.done || hasNoRemainingLineRules(rules)
@@ -137,14 +137,14 @@ export processRules = (orules, ostate, olineTuple) => {
 
   return pipe(
     where {
-      #[oindex, oline] =>
+      #[oindex, _line] =>
         recurseRules(
           oindex,
-          oline,
-          ostate,
+          _line,
+          _state,
           { failReason: Nothing, done: false, valid: true },
-          List.filter(Rule.isLine, orules),
+          List.filter(Rule.isLine, _rules),
         )
     },
-  )(olineTuple)
+  )(_lineTuple)
 }
