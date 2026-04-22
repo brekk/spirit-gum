@@ -23,8 +23,8 @@ export type VFileLine
   = InvalidLine(Integer, VFileError)
   | ValidLine(Integer, String)
   | EmptyLine(Integer)
-
-derive Comparable VFileLine
+// if you uncomment this, it yells about VFileError needing to be comparable (defined in src/Errors.mad)
+// derive Comparable VFileLine
 
 // we need something that allows for accumulation / collapse
 export type LineRange = LineRange(Integer, Integer, List VFileLine)

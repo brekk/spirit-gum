@@ -313,7 +313,7 @@ nearestEmptyOrAssignment = (index, lines, assignments) => {
 processTypesAndAliases = (path, _lines, _state) => {
   findEndsOfTypes = map(
     (ty) => if (ty.range.end < 0) do {
-      nearestEmptyOrAssignment(ty.range.start, _lines, _state.assignments)
+      log.main("YOYOOYO", nearestEmptyOrAssignment(ty.range.start, _lines, _state.assignments))
       return ty
     } else {
       ty
