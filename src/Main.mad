@@ -10,7 +10,6 @@ import String from "String"
 import Tuple from "Tuple"
 import Wish from "Wish"
 
-import Entity from "@/Entity"
 import Shared from "@/ExampleUtilities"
 import Line from "@/Line"
 import { log } from "@/Log"
@@ -61,35 +60,6 @@ map(
 ),
 */
 
-processSignatures = (blobs) => {
-  loop = (carried, xs) => where(xs) {
-    [] =>
-      carried.processed
-
-    [a, ...z] =>
-      where(a) {
-        Entity.Blob(#[h, t], #[i, j], raw) =>
-          if (carried.matching && t) {
-            loop(
-              {
-                matching: false,
-                segment: [],
-                processed: [...carried.processed, [...carried.segment, j]],
-              },
-              z,
-            )
-          } else if (!carried.matching && h) {
-            loop(
-              { matching: true, segment: [...carried.segment, i], processed: carried.processed },
-              z,
-            )
-          } else {
-            loop(carried, z)
-          }
-      }
-  }
-  return loop({ matching: false, segment: [], processed: [] }, blobs)
-}
 
 main = () => {
   typeSig = Rule.lineRule(
@@ -114,7 +84,14 @@ main = () => {
                         ...state,
                         signatures: [
                           ...state.signatures,
-                          { name, signature: String.trim(signature), start: index, end: -1 },
+                          {
+                            name,
+                            signature: String.trim(signature),
+                            range: { start: index, end: -1 },
+                            exported: false,
+                            takes: [],
+                            returns: "",
+                          },
                         ],
                       },
                       line,
@@ -139,19 +116,25 @@ main = () => {
               String.replace(Shared.REGEX.CAPTURING.ASSIGNMENT, "$1<><>$2"),
               String.split("<><>"),
               map(String.trim),
-              log.main("matching?"),
               where {
                 [exported, expected] =>
                   pipe(
                     List.find((x) => x.name == expected),
                     where {
-                      Just({ signature, name, start }) =>
+                      Just({ signature, name, range: { start, end } }) =>
                         #[
                           {
                             ...state,
                             signatures: [
                               ...List.reject((x) => x.name == expected, state.signatures),
-                              { name, signature, start, end: index },
+                              {
+                                name,
+                                signature,
+                                range: { start, end: index },
+                                exported: exported != "",
+                                takes: [],
+                                returns: "",
+                              },
                             ],
                           },
                           line,
@@ -161,6 +144,9 @@ main = () => {
                         #[state, line]
                     },
                   )(state.signatures)
+
+                _ =>
+                  #[state, line]
               },
             )(line)
           } else {
@@ -169,6 +155,42 @@ main = () => {
         },
       ),
     ],
+  )
+  cleanSig = (start, end, lines, x) => x
+      ++ " "
+      ++ pipe(
+        List.filter(
+          where {
+            Line.ValidLine(i, _) =>
+              (i > start && i < end)
+
+            _ =>
+              false
+          },
+        ),
+        map(Line.render),
+        map(String.trim),
+        String.unwords,
+      )(lines)
+
+  cleanSignature = (start, end, lines, sig) => pipe(
+    String.trim,
+    (_sig) => (Math.abs(start - end) > 1 ? cleanSig(start, end, lines, _sig) : _sig),
+  )(sig)
+
+  sigToIO = pipe(
+    String.split("->"),
+    map(String.trim),
+    (parts) => where(#[
+      List.slice(0, List.length(parts) - 2, parts),
+      List.nth(List.length(parts) - 1, parts),
+    ]) {
+      #[head, Just(end)] =>
+        ({ inputs: head, output: end })
+
+      #[head, Nothing] =>
+        ({ inputs: head, output: "{}" })
+    },
   )
 
   pipe(
@@ -179,29 +201,11 @@ main = () => {
           pipe(
             .signatures,
             map(
-              (v) => (
-                {
-                  ...v,
-                  signature: Math.abs(v.start - v.end) > 1
-                    ? String.trim(v.signature)
-                      ++ " "
-                      ++ pipe(
-                        List.filter(
-                          where {
-                            Line.ValidLine(i, _) =>
-                              (i > v.start && i < v.end)
-
-                            _ =>
-                              false
-                          },
-                        ),
-                        map(Line.render),
-                        map(String.trim),
-                        String.join(" "),
-                      )(lines)
-                    : v.signature,
-                }
-              ),
+              (v) => {
+                signature = cleanSignature(v.range.start, v.range.end, lines, v.signature)
+                io = sigToIO(signature)
+                return { ...v, signature, takes: io.inputs, returns: io.output }
+              },
             ),
             log.main("entities"),
           )(state)
