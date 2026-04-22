@@ -1,9 +1,15 @@
 import type { Maybe } from "Maybe"
 
+import Dict from "Dictionary"
 import Fn from "Function"
 import List from "List"
 import { Just, Nothing } from "Maybe"
 import String from "String"
+
+import Line from "@/Line"
+import { log, tapped } from "@/Log"
+import Rule from "@/Rule"
+import Transformer from "@/Rule/Transformer"
 
 
 
@@ -11,37 +17,125 @@ alias NumberedLine = #[Integer, String]
 export alias Matcher a = a -> NumberedLine -> Boolean
 
 export type EntityMatcher a = LineMatcher(Matcher a) | SequentialMatcher(Matcher a, Matcher a)
-export type Entity a = Entity(String, EntityMatcher a, List NumberedLine)
+export type Entity a = Entity(String, EntityMatcher a)
 
 export matchLine = LineMatcher
 export matchSequence = SequentialMatcher
 
 name :: Entity a -> String
 export name = where {
-  Entity(x, _, _) =>
+  Entity(x, _) =>
     x
 }
 startMatch :: Entity a -> Matcher a
 export startMatch = where {
-  Entity(_, SequentialMatcher(x, _), _) =>
+  Entity(_, SequentialMatcher(x, _)) =>
     x
 
-  Entity(_, LineMatcher(x), _) =>
+  Entity(_, LineMatcher(x)) =>
     x
 }
 endMatch :: Entity a -> Maybe (Matcher a)
 export endMatch = where {
-  Entity(_, SequentialMatcher(_, x), _) =>
+  Entity(_, SequentialMatcher(_, x)) =>
     Just(x)
 
   _ =>
     Nothing
 }
-body :: Entity a -> List NumberedLine
-export body = where {
-  Entity(_, _, x) =>
-    x
-}
 
 export type Extractor a = Extractor(List NumberedLine -> #[a, String])
 export extractor = Extractor
+
+/*
+  Transformer.ofLineRaw(
+    (state, index, line) => {
+      ref = state
+      match = matcher(state, #[index, line])
+      // existing = Dict.get(entityName)
+      // if (match) {
+      //   Dict.insert state.entities
+      ref.entities := if (match) {
+        List.append(#[entityName, index, line], ref.entities)
+      } else {
+        ref.entities
+      }
+      return #[ref, line]
+    },
+  ),
+*/
+
+export type EntityBlob = Blob(#[Boolean, Boolean], #[Integer, Integer], String)
+
+
+export toRule = where {
+  Entity(_name, LineMatcher(matcher)) =>
+    do {
+      entityName = "entity/" ++ _name ++ "/rule/line"
+      return Rule.lineRule(
+        false,
+        entityName,
+        [],
+        [
+          Transformer.ofLineRaw(
+            (state, index, line) => {
+              ref = state
+              tuple = #[index, line]
+              match = matcher(state, tuple)
+              mlist = Dict.get(entityName, ref.entities)
+              blob = Blob(#[match, false], #[index, -1], line)
+              updated = where(mlist) {
+                Just(prev) =>
+                  if (match) {
+                    List.append(blob, prev)
+                  } else {
+                    prev
+                  }
+
+                _ =>
+                  match ? [blob] : []
+              }
+              ref.entities := Dict.insert(entityName, updated, ref.entities)
+              return #[ref, line]
+            },
+          ),
+        ],
+      )
+    }
+
+  Entity(_name, SequentialMatcher(headMatch, tailMatch)) =>
+    do {
+      entityName = "entity/" ++ _name ++ "/rule/seq"
+      return Rule.lineRule(
+        false,
+        entityName,
+        [],
+        [
+          Transformer.ofLineRaw(
+            (state, index, line) => {
+              ref = state
+              tuple = #[index, line]
+              hmatch = headMatch(state, tuple)
+              tmatch = tailMatch(state, tuple)
+              matched = hmatch || tmatch
+              blob = Blob(#[hmatch, tmatch], #[hmatch ? index : -1, tmatch ? index : -1], line)
+              mlist = Dict.get(entityName, ref.entities)
+              updated = where(mlist) {
+                Just(prev) =>
+                  if (matched) {
+                    List.append(blob, prev)
+                  } else {
+                    prev
+                  }
+
+                _ =>
+                  matched ? [blob] : []
+              }
+              ref.entities := Dict.insert(entityName, updated, ref.entities)
+              return #[ref, line]
+            },
+          ),
+        ],
+      )
+    }
+}

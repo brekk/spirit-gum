@@ -11,23 +11,28 @@ export E = {
   LINE: "line",
   STATE: "state",
   RAW: "raw",
+  ENTITY: "entity",
 }
 
+tag = tagWithScope(BASE)
+
 export TAGS = {
-  vfile: tagWithScope(BASE, [E.VFILE]),
-  vfileV: tagWithScope(BASE, [E.VFILE, E.VALIDATOR]),
-  vfileT: tagWithScope(BASE, [E.VFILE, E.TRANSFORMER]),
-  vfileR: tagWithScope(BASE, [E.VFILE, E.RULE]),
-  rule: tagWithScope(BASE, [E.RULE]),
-  validator: tagWithScope(BASE, [E.RULE, E.VALIDATOR]),
-  transformer: tagWithScope(BASE, [E.RULE, E.TRANSFORMER]),
-  main: tagWithScope(BASE, ["main"]),
-  line: tagWithScope(BASE, [E.LINE]),
-  lineR: tagWithScope(BASE, [E.LINE, E.RULE]),
-  lineT: tagWithScope(BASE, [E.LINE, E.TRANSFORMER]),
-  lineTLine: tagWithScope(BASE, [E.LINE, E.TRANSFORMER, E.LINE]),
-  lineTState: tagWithScope(BASE, [E.LINE, E.TRANSFORMER, E.STATE]),
-  lineTRaw: tagWithScope(BASE, [E.LINE, E.TRANSFORMER, E.RAW]),
+  vfile: tag([E.VFILE]),
+  vfileV: tag([E.VFILE, E.VALIDATOR]),
+  vfileT: tag([E.VFILE, E.TRANSFORMER]),
+  vfileR: tag([E.VFILE, E.RULE]),
+  rule: tag([E.RULE]),
+  validator: tag([E.RULE, E.VALIDATOR]),
+  transformer: tag([E.RULE, E.TRANSFORMER]),
+  main: tag(["main"]),
+  main2: tag(["main", "two"]),
+  line: tag([E.LINE]),
+  lineR: tag([E.LINE, E.RULE]),
+  lineT: tag([E.LINE, E.TRANSFORMER]),
+  lineTLine: tag([E.LINE, E.TRANSFORMER, E.LINE]),
+  lineTState: tag([E.LINE, E.TRANSFORMER, E.STATE]),
+  lineTRaw: tag([E.LINE, E.TRANSFORMER, E.RAW]),
+  entity: tag([E.ENTITY]),
 }
 
 export log = {
@@ -39,12 +44,14 @@ export log = {
   validator: env(TAGS.validator),
   transformer: env(TAGS.transformer),
   main: env(TAGS.main),
+  main2: env(TAGS.main2),
   line: env(TAGS.line),
   lineR: env(TAGS.lineR),
   lineT: env(TAGS.lineT),
   lineTLine: env(TAGS.lineTLine),
   lineTState: env(TAGS.lineTState),
   lineTRaw: env(TAGS.lineTRaw),
+  entity: env(TAGS.entity),
 }
 
 tap :: (String -> b -> b) -> String -> (a -> b) -> a -> a
@@ -62,10 +69,12 @@ export tapped = {
   validator: tap(log.validator),
   transformer: tap(log.transformer),
   main: tap(log.main),
+  main2: tap(log.main2),
   line: tap(log.line),
   lineR: tap(log.lineR),
   lineT: tap(log.lineT),
   lineTLine: tap(log.lineTLine),
   lineTState: tap(log.lineTState),
   lineTRaw: tap(log.lineTRaw),
+  entity: tap(log.entity),
 }

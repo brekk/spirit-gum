@@ -6,6 +6,7 @@ import List from "List"
 import String from "String"
 import Wish from "Wish"
 
+import Shared from "@/ExampleUtilities"
 import Line from "@/Line"
 import { log } from "@/Log"
 import Rule from "@/Rule"
@@ -16,46 +17,14 @@ import VFile from "@/VFile"
 
 
 
-fillfull = (badMsg, goodMsg, wish) => Wish.fulfill(
-  (bad) => {
-    IO.pTrace(badMsg, bad)
-  },
-  (good) => {
-    IO.pTrace(goodMsg, good)
-  },
-  wish,
-)
-
-
 SOURCE = "./examples/unprocessed-readme.md"
 INITIAL_STATE = { hasTitle: false, hasTypes: false, types: [], constructors: [] }
 
-capitalize = Fn.when(
-  pipe(
-    String.length,
-    Compare.lt(0),
-  ),
-  (s) => pipe(
-      String.slice(0, 1),
-      String.toUpper,
-    )(s)
-      ++ String.slice(1, String.length(s), s),
-)
-
-REGEX = {
-  NON_WORD_AND_SPACES: "[\\W\\s]",
-  CAPTURING: {
-    HEADING: "^(#*)\\s*(.*)",
-    MADLIB_FILE: "\\b([\\w\\/\\.]*)\\.mad",
-    LIST_ITEM: " - (\\w*)",
-  },
-}
-
 slug = pipe(
   String.toLower,
-  capitalize,
+  Shared.capitalize,
   String.trim,
-  String.replace(REGEX.NON_WORD_AND_SPACES, " "),
+  String.replace(Shared.REGEX.NON_WORD_AND_SPACES, " "),
 )
 
 headingSlug = (_, _, line) => {
@@ -64,7 +33,7 @@ headingSlug = (_, _, line) => {
   // there might be a cleaner way of expressing this regexery
   clean = isNotFirstHeading
     ? pipe(
-      String.replace(REGEX.CAPTURING.HEADING, "$1<>$2"),
+      String.replace(Shared.REGEX.CAPTURING.HEADING, "$1<>$2"),
       String.split("<>"),
       where {
         [a, b] =>
@@ -78,25 +47,13 @@ headingSlug = (_, _, line) => {
   return clean
 }
 
-hasMadlibFile = String.match(REGEX.CAPTURING.MADLIB_FILE)
-replaceMadlibFileByPattern = String.replace(REGEX.CAPTURING.MADLIB_FILE)
-hasSlash = String.contains("/")
 
-linkMadFilesToDomainWithPath = (domain, path, _, _, line) => Fn.when(
-  hasMadlibFile,
-  Fn.ifElse(
-    hasSlash,
-    replaceMadlibFileByPattern("[$1.mad](" ++ domain ++ path ++ "/$1.mad)"),
-    replaceMadlibFileByPattern("[$1.mad](" ++ domain ++ path ++ "/src/$1.mad)"),
-  ),
-)(line)
-linkMadFilesToGithub = linkMadFilesToDomainWithPath("//github.com")
-linkMadFiles = linkMadFilesToGithub("/brekk/spirit-gum/blob/main")
+linkMadFiles = Shared.linkMadFilesToGithub("/brekk/spirit-gum/blob/main")
 
 grabExports = (meta, _, line) => Fn.ifElse(
-  String.match(REGEX.CAPTURING.LIST_ITEM),
+  String.match(Shared.REGEX.CAPTURING.LIST_ITEM),
   pipe(
-    String.replace(REGEX.CAPTURING.LIST_ITEM, "$1"),
+    String.replace(Shared.REGEX.CAPTURING.LIST_ITEM, "$1"),
     String.trim,
     (item) => {
       statemod = { ...meta, types: List.append(item, meta.types) }
@@ -158,6 +115,6 @@ main = () => {
         map(Fn.always("Updated README!")),
       ),
     ),
-    fillfull("Barf!", "Yay!"),
+    Shared.fillfull("Barf!", "Yay!"),
   )(INITIAL_STATE)
 }

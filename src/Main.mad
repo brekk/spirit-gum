@@ -1,4 +1,5 @@
 import Compare from "Compare"
+import Dict from "Dictionary"
 import File from "File"
 import Fn from "Function"
 import IO from "IO"
@@ -6,6 +7,7 @@ import List from "List"
 import String from "String"
 import Wish from "Wish"
 
+import Entity from "@/Entity"
 import Shared from "@/ExampleUtilities"
 import Line from "@/Line"
 import { log } from "@/Log"
@@ -17,104 +19,102 @@ import VFile from "@/VFile"
 
 
 
-SOURCE = "./examples/unprocessed-readme.md"
-INITIAL_STATE = { hasTitle: false, hasTypes: false, types: [], constructors: [] }
+SOURCE = "./src/VFile.mad"
+OUTPUT = "./README.md"
+INITIAL_STATE = { entities: Dict.empty }
 
-REGEX = {
-  NON_WORD_AND_SPACES: "[\\W\\s]",
-  CAPTURING: {
-    HEADING: "^(#*)\\s*(.*)",
-    MADLIB_FILE: "\\b([\\w\\/\\.]*)\\.mad",
-    LIST_ITEM: " - (\\w*)",
-  },
-}
-
-headingSlug = (_, _, line) => {
-  // don't apply to top-level headings
-  isNotFirstHeading = Fn.both(String.startsWith("##"), String.startsWith("#"), line)
-  // there might be a cleaner way of expressing this regexery
-  clean = isNotFirstHeading
-    ? pipe(
-      String.replace(REGEX.CAPTURING.HEADING, "$1<>$2"),
-      String.split("<>"),
-      where {
-        [a, b] =>
-          a ++ " " ++ Shared.slug(b)
-
-        _ =>
-          ""
-      },
-    )(line)
-    : line
-  return clean
-}
-
-linkMadFiles = Shared.linkMadFilesToGithub("/brekk/spirit-gum/blob/main")
-
-grabExports = (meta, _, line) => Fn.ifElse(
-  String.match(REGEX.CAPTURING.LIST_ITEM),
+/*
+// write the rendered content to a new file 
+writeToFile = chain(
   pipe(
-    String.replace(REGEX.CAPTURING.LIST_ITEM, "$1"),
-    String.trim,
-    (item) => {
-      statemod = { ...meta, types: List.append(item, meta.types) }
-      return #[statemod, "  - `" ++ item ++ "`"]
-    },
+    File.write(OUTPUT),
+    VFile.forceVFileError,
+    map(Fn.always("Updated README!")),
   ),
-  Fn.always(#[meta, line]),
-)(line)
+)
+Rule.lineRule(
+  true,
+  "check",
+  [],
+  [
+    Transformer.ofLineRaw(
+      (meta, index, line) => {
+        matched = String.match("(.*)\\s=\\s", line)
+        (matched ? log.main : log.main2)(show(index), matched)
+        return #[meta, line]
+      },
+    ),
+  ],
+),
+*/
+// call the renderer hooked after the processing happens
+/*
+map(
+  pipe(
+    log.main("processed raw"),
+    Template.renderWithConverter(map(Line.render), (_, lines, _) => String.unlines(lines)),
+    log.main("converted"),
+  ),
+),
+*/
 
+processSignatures = (blobs) => {
+  loop = (carried, xs) => where(xs) {
+    [] =>
+      carried.processed
 
+    [a, ...z] =>
+      where(a) {
+        Entity.Blob(#[h, t], #[i, j], raw) =>
+          if (carried.matching && t) {
+            loop(
+              {
+                matching: false,
+                segment: [],
+                processed: [...carried.processed, [...carried.segment, j]],
+              },
+              z,
+            )
+          } else if (!carried.matching && h) {
+            loop(
+              { matching: true, segment: [...carried.segment, i], processed: carried.processed },
+              z,
+            )
+          } else {
+            loop(carried, z)
+          }
+      }
+  }
+  return loop({ matching: false, segment: [], processed: [] }, blobs)
+}
 
 main = () => {
+  entity = Entity.Entity(
+    "madlib:signature",
+    Entity.SequentialMatcher(
+      (state, lineTuple) => where(lineTuple) {
+        #[_, line] =>
+          String.contains("::", line)
+      },
+      (state, lineTuple) => where(lineTuple) {
+        #[_, line] =>
+          String.match("(.*)\\s=\\s", line)
+      },
+    ),
+  )
+
   pipe(
-    VFile.fromPath(
-      SOURCE,
-      [
-        Rule.bodyRule(
-          false,
-          "spirit-gum/readme/title",
-          [Validator.ofBody((_, body) => String.contains("^#", body))],
-          [Transformer.ofBodyState((meta, _) => ({ ...meta, hasTitle: true }))],
-        ),
-        Rule.lineRule(
-          true,
-          "spirit-gum/readme/headings",
-          [],
-          [
-            Transformer.ofLine(headingSlug),
-            Transformer.ofLine(linkMadFiles),
-            Transformer.ofLineRaw(grabExports),
-          ],
-        ),
-        Rule.bodyRule(
-          false,
-          "spirit-gum/readme/types",
-          [
-            Validator.ofBody(
-              (_, body) => pipe(
-                String.toLower,
-                String.contains("# types"),
-              )(body),
-            ),
-          ],
-          [Transformer.ofBodyState((meta, _) => ({ ...meta, hasTypes: true }))],
-        ),
-      ],
-    ),
+    VFile.fromPath(SOURCE, [Entity.toRule(entity)]),
     map(
-      pipe(
-        log.main("processed raw"),
-        Template.renderWithConverter(map(Line.render), (_, lines, _) => String.unlines(lines)),
-        log.main("converted"),
-      ),
-    ),
-    chain(
-      pipe(
-        File.write("./README.md"),
-        VFile.forceVFileError,
-        map(Fn.always("Updated README!")),
-      ),
+      where {
+        VFile.ConcreteFile(_, lines, state) =>
+          pipe(
+            .entities,
+            Dict.get("entity/madlib:signature/rule/seq"),
+            log.main("entities"),
+            map(processSignatures),
+          )(state)
+      },
     ),
     Shared.fillfull("Barf!", "Yay!"),
   )(INITIAL_STATE)

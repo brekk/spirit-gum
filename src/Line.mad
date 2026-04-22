@@ -23,8 +23,9 @@ export type VFileLine
   = InvalidLine(Integer, VFileError)
   | ValidLine(Integer, String)
   | EmptyLine(Integer)
-// invalid line: line number, rule id, specific fail reason
-// valid line: line number, raw
+
+// we need something that allows for accumulation / collapse
+export type LineRange = LineRange(Integer, Integer, List VFileLine)
 
 getLineNumber :: VFileLine -> Integer
 export getLineNumber = where {
@@ -129,7 +130,7 @@ export processRules = (_rules, _state, _lineTuple) => {
             }
 
           _ =>
-            // we are filtering at the base call site, so we cannot get here
+            // we are filtering at the base call site, so we cannot actually get here
             recurseRules(index, line, state, loopState, rest)
         }
     }
@@ -137,9 +138,9 @@ export processRules = (_rules, _state, _lineTuple) => {
 
   return pipe(
     where {
-      #[oindex, _line] =>
+      #[_index, _line] =>
         recurseRules(
-          oindex,
+          _index,
           _line,
           _state,
           { failReason: Nothing, done: false, valid: true },
