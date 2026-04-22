@@ -262,3 +262,12 @@ export fromPath = (src, rules, state) => pipe(
     },
   ),
 )(src)
+
+postTransform :: (String -> List VFileLine -> a -> b) -> WishCFile a -> Wish VFileError b
+export postTransform = (fn, wfile) => map(
+  where {
+    ConcreteFile(path, lines, state) =>
+      fn(path, lines, state)
+  },
+  wfile,
+)

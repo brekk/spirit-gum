@@ -22,141 +22,10 @@ import VFile from "@/VFile"
 
 
 SOURCE = "./src/VFile.mad"
-OUTPUT = "./README.md"
-INITIAL_STATE = { entities: Dict.empty, signatures: [] }
+INITIAL_STATE = { signatures: [], types: [] }
 
-/*
-// write the rendered content to a new file 
-writeToFile = chain(
-  pipe(
-    File.write(OUTPUT),
-    VFile.forceVFileError,
-    map(Fn.always("Updated README!")),
-  ),
-)
-Rule.lineRule(
-  true,
-  "check",
-  [],
-  [
-    Transformer.ofLineRaw(
-      (meta, index, line) => {
-        matched = String.match("(.*)\\s=\\s", line)
-        (matched ? log.main : log.main2)(show(index), matched)
-        return #[meta, line]
-      },
-    ),
-  ],
-),
-*/
-// call the renderer hooked after the processing happens
-/*
-map(
-  pipe(
-    log.main("processed raw"),
-    Template.renderWithConverter(map(Line.render), (_, lines, _) => String.unlines(lines)),
-    log.main("converted"),
-  ),
-),
-*/
-
-
-main = () => {
-  typeSig = Rule.lineRule(
-    false,
-    "madlib/type-signature",
-    [],
-    [
-      Transformer.ofLineRaw(
-        (state, index, line) => {
-          match = String.contains("::", line)
-          return if (match) {
-            pipe(
-              String.replace(Shared.REGEX.CAPTURING.TYPE_SIGNATURE, "$1<><>$2"),
-              String.split("<><>"),
-              map(String.trim),
-              where {
-                [name, signature] =>
-                  log.main(
-                    "hey",
-                    #[
-                      {
-                        ...state,
-                        signatures: [
-                          ...state.signatures,
-                          {
-                            name,
-                            signature: String.trim(signature),
-                            range: { start: index, end: -1 },
-                            exported: false,
-                            takes: [],
-                            returns: "",
-                          },
-                        ],
-                      },
-                      line,
-                    ],
-                  )
-
-                _ =>
-                  #[state, line]
-              },
-            )(line)
-          } else {
-            #[state, line]
-          }
-        },
-      ),
-      Transformer.ofLineRaw(
-        (state, index, line) => {
-          match = String.match(Shared.REGEX.CAPTURING.ASSIGNMENT, line)
-          return if (match) {
-            pipe(
-              String.trim,
-              String.replace(Shared.REGEX.CAPTURING.ASSIGNMENT, "$1<><>$2"),
-              String.split("<><>"),
-              map(String.trim),
-              where {
-                [exported, expected] =>
-                  pipe(
-                    List.find((x) => x.name == expected),
-                    where {
-                      Just({ signature, name, range: { start, end } }) =>
-                        #[
-                          {
-                            ...state,
-                            signatures: [
-                              ...List.reject((x) => x.name == expected, state.signatures),
-                              {
-                                name,
-                                signature,
-                                range: { start, end: index },
-                                exported: exported != "",
-                                takes: [],
-                                returns: "",
-                              },
-                            ],
-                          },
-                          line,
-                        ]
-
-                      _ =>
-                        #[state, line]
-                    },
-                  )(state.signatures)
-
-                _ =>
-                  #[state, line]
-              },
-            )(line)
-          } else {
-            #[state, line]
-          }
-        },
-      ),
-    ],
-  )
-  cleanSig = (start, end, lines, x) => x
+processSignatures = (_, lines, state) => {
+  cleanSig = (start, end, _lines, x) => x
       ++ " "
       ++ pipe(
         List.filter(
@@ -171,13 +40,42 @@ main = () => {
         map(Line.render),
         map(String.trim),
         String.unwords,
-      )(lines)
+      )(_lines)
 
-  cleanSignature = (start, end, lines, sig) => pipe(
+  cleanSignature = (start, end, _lines, sig) => pipe(
     String.trim,
-    (_sig) => (Math.abs(start - end) > 1 ? cleanSig(start, end, lines, _sig) : _sig),
+    (_sig) => (Math.abs(start - end) > 1 ? cleanSig(start, end, _lines, _sig) : _sig),
   )(sig)
 
+  collapseParens = (raw) => {
+    helper = (processed, current, xs) => where(xs) {
+      [] =>
+        processed
+
+      [a, ...z] =>
+        do {
+          // ensure that that we check for balanced parens
+          open = Fn.both(Fn.complement(String.contains(")")), String.startsWith("("))(a)
+          close = Fn.both(Fn.complement(String.contains("(")), String.endsWith(")"))(a)
+          return if (close) {
+            // if it closes, move it to processed
+            helper([...processed, String.join(" -> ", [...current, a])], [], z)
+          } else if (open) {
+            // if it opens, keep iterating in current
+            helper(processed, [a], z)
+          } else if (List.length(current) > 0) {
+            // if current is present and has values, keep building it
+            helper(processed, [...current, a], z)
+          } else {
+            // otherwise treat it as a processed value
+            helper([...processed, a], current, z)
+          }
+        }
+    }
+    return helper([], [], raw)
+  }
+
+  // we don't yet handle parens correctly
   sigToIO = pipe(
     String.split("->"),
     map(String.trim),
@@ -191,26 +89,141 @@ main = () => {
       #[head, Nothing] =>
         ({ inputs: head, output: "{}" })
     },
+    where {
+      { inputs, output } =>
+        { output, inputs: collapseParens(inputs) }
+    },
   )
-
-  pipe(
-    VFile.fromPath(SOURCE, [typeSig]),
+  return pipe(
+    .signatures,
     map(
-      where {
-        VFile.ConcreteFile(_, lines, state) =>
-          pipe(
-            .signatures,
-            map(
-              (v) => {
-                signature = cleanSignature(v.range.start, v.range.end, lines, v.signature)
-                io = sigToIO(signature)
-                return { ...v, signature, takes: io.inputs, returns: io.output }
-              },
-            ),
-            log.main("entities"),
-          )(state)
+      (v) => {
+        signature = cleanSignature(v.range.start, v.range.end, lines, v.signature)
+        io = sigToIO(signature)
+        return { ...v, signature, takes: io.inputs, returns: io.output }
       },
     ),
+    (sigs) => ({ types: state.types, signatures: sigs }),
+  )(state)
+}
+
+captureSignatures = (state, index, line) => {
+  match = Fn.both(String.contains("::"), Shared.isUncommented)(line)
+  return if (match) {
+    pipe(
+      String.replace(Shared.REGEX.CAPTURING.TYPE_SIGNATURE, "$1<><>$2"),
+      String.split("<><>"),
+      map(String.trim),
+      where {
+        [name, signature] =>
+          #[
+            {
+              ...state,
+              signatures: [
+                ...state.signatures,
+                {
+                  name,
+                  signature: String.trim(signature),
+                  range: { start: index, end: -1 },
+                  exported: false,
+                  takes: [],
+                  returns: "",
+                },
+              ],
+            },
+            line,
+          ]
+
+        _ =>
+          #[state, line]
+      },
+    )(line)
+  } else {
+    #[state, line]
+  }
+}
+
+captureAssignmentsAndExports = (state, index, line) => {
+  match = String.match(Shared.REGEX.CAPTURING.ASSIGNMENT, line)
+  return if (match) {
+    pipe(
+      String.trim,
+      String.replace(Shared.REGEX.CAPTURING.ASSIGNMENT, "$1<><>$2"),
+      String.split("<><>"),
+      map(String.trim),
+      where {
+        [exported, expected] =>
+          pipe(
+            List.find((x) => x.name == expected),
+            where {
+              Just({ signature, name, range: { start, end } }) =>
+                #[
+                  {
+                    ...state,
+                    signatures: [
+                      ...List.reject((x) => x.name == expected, state.signatures),
+                      {
+                        name,
+                        signature,
+                        range: { start, end: index },
+                        exported: exported != "",
+                        takes: [],
+                        returns: "",
+                      },
+                    ],
+                  },
+                  line,
+                ]
+
+              _ =>
+                #[state, line]
+            },
+          )(state.signatures)
+
+        _ =>
+          #[state, line]
+      },
+    )(line)
+  } else {
+    #[state, line]
+  }
+}
+
+captureTypes = (state, index, line) => {
+  match = String.match(Shared.REGEX.CAPTURING.TYPES, line)
+  return if (match) {
+    #[
+      pipe(
+        String.trim,
+        String.replace(Shared.REGEX.CAPTURING.TYPES, "$1<><>$2"),
+        String.split("<><>"),
+        map(String.trim),
+        where {
+          [exported, typeDef] =>
+            ({ ...state, types: [...state.types, typeDef] })
+        },
+      )(line),
+      line,
+    ]
+  } else {
+    #[state, line]
+  }
+}
+
+
+main = () => {
+  typeSig = Rule.lineRule(
+    false,
+    "madlib/type-signature",
+    [],
+    [Transformer.ofLineRaw(captureSignatures), Transformer.ofLineRaw(captureAssignmentsAndExports)],
+  )
+  types = Rule.lineRule(false, "madlib/type", [], [Transformer.ofLineRaw(captureTypes)])
+
+
+  pipe(
+    VFile.fromPath(SOURCE, [typeSig, types]),
+    VFile.postTransform(processSignatures),
     Shared.fillfull("Barf!", "Yay!"),
   )(INITIAL_STATE)
 }

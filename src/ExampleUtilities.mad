@@ -46,6 +46,7 @@ export REGEX = {
     LIST_ITEM: " - (\\w*)",
     TYPE_SIGNATURE: "^(.*)::\\s?(.*)",
     ASSIGNMENT: "^(export)?\\s?([.\\S]*)\\s?\\=\\s?(.*)",
+    TYPES: "^(export)?\\s?type\\s?(.*)",
   },
 }
 
@@ -71,3 +72,6 @@ export linkMadFilesToDomainWithPath = (domain, path, _, _, line) => Fn.when(
 
 
 export linkMadFilesToGithub = linkMadFilesToDomainWithPath("//github.com")
+
+export isCommented = String.startsWith("//")
+export isUncommented = Fn.complement(isCommented)
