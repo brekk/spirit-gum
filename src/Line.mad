@@ -24,6 +24,8 @@ export type VFileLine
   | ValidLine(Integer, String)
   | EmptyLine(Integer)
 
+derive Comparable VFileLine
+
 // we need something that allows for accumulation / collapse
 export type LineRange = LineRange(Integer, Integer, List VFileLine)
 

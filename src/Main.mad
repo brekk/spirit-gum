@@ -22,90 +22,9 @@ import VFile from "@/VFile"
 
 
 SOURCE = "./src/VFile.mad"
-INITIAL_STATE = { signatures: [], types: [] }
+INITIAL_STATE = { assignments: [], signatures: [], types: [], aliases: [] }
 
-processSignatures = (_, lines, state) => {
-  cleanSig = (start, end, _lines, x) => x
-      ++ " "
-      ++ pipe(
-        List.filter(
-          where {
-            Line.ValidLine(i, _) =>
-              (i > start && i < end)
 
-            _ =>
-              false
-          },
-        ),
-        map(Line.render),
-        map(String.trim),
-        String.unwords,
-      )(_lines)
-
-  cleanSignature = (start, end, _lines, sig) => pipe(
-    String.trim,
-    (_sig) => (Math.abs(start - end) > 1 ? cleanSig(start, end, _lines, _sig) : _sig),
-  )(sig)
-
-  collapseParens = (raw) => {
-    helper = (processed, current, xs) => where(xs) {
-      [] =>
-        processed
-
-      [a, ...z] =>
-        do {
-          // ensure that that we check for balanced parens
-          open = Fn.both(Fn.complement(String.contains(")")), String.startsWith("("))(a)
-          close = Fn.both(Fn.complement(String.contains("(")), String.endsWith(")"))(a)
-          return if (close) {
-            // if it closes, move it to processed
-            helper([...processed, String.join(" -> ", [...current, a])], [], z)
-          } else if (open) {
-            // if it opens, keep iterating in current
-            helper(processed, [a], z)
-          } else if (List.length(current) > 0) {
-            // if current is present and has values, keep building it
-            helper(processed, [...current, a], z)
-          } else {
-            // otherwise treat it as a processed value
-            helper([...processed, a], current, z)
-          }
-        }
-    }
-    return helper([], [], raw)
-  }
-
-  // we don't yet handle parens correctly
-  sigToIO = pipe(
-    String.split("->"),
-    map(String.trim),
-    (parts) => where(#[
-      List.slice(0, List.length(parts) - 2, parts),
-      List.nth(List.length(parts) - 1, parts),
-    ]) {
-      #[head, Just(end)] =>
-        ({ inputs: head, output: end })
-
-      #[head, Nothing] =>
-        ({ inputs: head, output: "{}" })
-    },
-    where {
-      { inputs, output } =>
-        { output, inputs: collapseParens(inputs) }
-    },
-  )
-  return pipe(
-    .signatures,
-    map(
-      (v) => {
-        signature = cleanSignature(v.range.start, v.range.end, lines, v.signature)
-        io = sigToIO(signature)
-        return { ...v, signature, takes: io.inputs, returns: io.output }
-      },
-    ),
-    (sigs) => ({ types: state.types, signatures: sigs }),
-  )(state)
-}
 
 captureSignatures = (state, index, line) => {
   match = Fn.both(String.contains("::"), Shared.isUncommented)(line)
@@ -176,7 +95,15 @@ captureAssignmentsAndExports = (state, index, line) => {
                 ]
 
               _ =>
-                #[state, line]
+                #[
+                  exported != "" && expected != ""
+                    ? {
+                      ...state,
+                      assignments: [...state.assignments, #[index, exported, expected]],
+                    }
+                    : state,
+                  line,
+                ]
             },
           )(state.signatures)
 
@@ -199,8 +126,24 @@ captureTypes = (state, index, line) => {
         String.split("<><>"),
         map(String.trim),
         where {
-          [exported, typeDef] =>
-            ({ ...state, types: [...state.types, typeDef] })
+          [exported, typeDef, body] =>
+            (
+              {
+                ...state,
+                types: [
+                  ...state.types,
+                  {
+                    exported: exported != "",
+                    range: { start: index, end: -1 },
+                    aliased: false,
+                    typeDef,
+                  },
+                ],
+              }
+            )
+
+          _ =>
+            state
         },
       )(line),
       line,
@@ -208,6 +151,182 @@ captureTypes = (state, index, line) => {
   } else {
     #[state, line]
   }
+}
+
+captureAliases = (state, index, line) => {
+  match = String.match(Shared.REGEX.CAPTURING.ALIAS, line)
+  return if (match) {
+    #[
+      pipe(
+        String.trim,
+        String.replace(Shared.REGEX.CAPTURING.ALIAS, "$1<><>$2"),
+        String.split("<><>"),
+        map(String.trim),
+        where {
+          [exported, typeDef] =>
+            (
+              {
+                ...state,
+                aliases: [
+                  ...state.aliases,
+                  {
+                    exported: exported != "",
+                    range: { start: index, end: -1 },
+                    aliased: true,
+                    typeDef,
+                  },
+                ],
+              }
+            )
+
+          _ =>
+            state
+        },
+      )(line),
+      line,
+    ]
+  } else {
+    #[state, line]
+  }
+}
+
+processSignatures = (path, lines, state) => {
+  cleanSig = (start, end, _lines, x) => x
+      ++ " "
+      ++ pipe(
+        List.filter(
+          where {
+            Line.ValidLine(i, _) =>
+              (i > start && i < end)
+
+            _ =>
+              false
+          },
+        ),
+        map(Line.render),
+        map(String.trim),
+        String.unwords,
+      )(_lines)
+
+  cleanSignature = (start, end, _lines, sig) => pipe(
+    String.trim,
+    (_sig) => (Math.abs(start - end) > 1 ? cleanSig(start, end, _lines, _sig) : _sig),
+  )(sig)
+
+  collapseParens = (raw) => {
+    helper = (processed, current, xs) => where(xs) {
+      [] =>
+        processed
+
+      [a, ...z] =>
+        do {
+          // ensure that that we check for balanced parens
+          open = Fn.both(Fn.complement(String.contains(")")), String.startsWith("("))(a)
+          close = Fn.both(Fn.complement(String.contains("(")), String.endsWith(")"))(a)
+          return if (close) {
+            // if it closes, move it to processed
+            helper([...processed, String.join(" -> ", [...current, a])], [], z)
+          } else if (open) {
+            // if it opens, keep iterating in current
+            helper(processed, [a], z)
+          } else if (List.length(current) > 0) {
+            // if current is present and has values, keep building it
+            helper(processed, [...current, a], z)
+          } else {
+            // otherwise treat it as a processed value
+            helper([...processed, a], current, z)
+          }
+        }
+    }
+    return helper([], [], raw)
+  }
+
+  // we don't yet handle parens correctly
+  sigToIO = pipe(
+    String.split("->"),
+    map(String.trim),
+    (parts) => where(#[
+      List.slice(0, List.length(parts) - 2, parts),
+      List.nth(List.length(parts) - 1, parts),
+    ]) {
+      #[head, Just(end)] =>
+        ({ inputs: head, output: end })
+
+      #[head, Nothing] =>
+        ({ inputs: head, output: "{}" })
+    },
+    where {
+      { inputs, output } =>
+        { output, inputs: collapseParens(inputs) }
+    },
+  )
+  return VFile.ConcreteFile(
+    path,
+    lines,
+    pipe(
+      .signatures,
+      map(
+        (v) => {
+          signature = cleanSignature(v.range.start, v.range.end, lines, v.signature)
+          io = sigToIO(signature)
+          return { ...v, signature, takes: io.inputs, returns: io.output }
+        },
+      ),
+      (sigs) => ({ ...state, signatures: sigs }),
+    )(state),
+  )
+}
+
+nearestEmptyOrAssignment = (index, lines, assignments) => {
+  helper = (done, nearest, idx, xs) => done
+    ? nearest
+    : (
+      where(xs) {
+        [] =>
+          nearest
+
+        [a, ...z] =>
+          do {
+            ln = Line.getLineNumber(a)
+            prev = if (nearest < 0) {
+              ln
+            } else {
+              Math.abs(nearest - ln)
+            }
+            // has to be greater than the index
+            // and not greater than the previous
+            IO.pTrace("hohoho", { prev, a })
+            return if ((idx > index) && (idx < prev)) {
+              helper(true, prev, ln, z)
+            } else {
+              helper(false, nearest, ln, z)
+            }
+          }
+      }
+    )
+  // convert assignments into "lines"
+  assLines = map(where { #[i, _, _] => Line.EmptyLine(i) }, assignments)
+  allLines = List.concat(lines, assLines)
+  return helper(false, -1, index, allLines)
+}
+
+processTypesAndAliases = (path, _lines, _state) => {
+  findEndsOfTypes = map(
+    (ty) => if (ty.range.end < 0) do {
+      nearestEmptyOrAssignment(ty.range.start, _lines, _state.assignments)
+      return ty
+    } else {
+      ty
+    },
+  )
+  return VFile.ConcreteFile(
+    path,
+    _lines,
+    pipe(
+      .aliases,
+      findEndsOfTypes,
+    )(_state),
+  )
 }
 
 
@@ -219,11 +338,12 @@ main = () => {
     [Transformer.ofLineRaw(captureSignatures), Transformer.ofLineRaw(captureAssignmentsAndExports)],
   )
   types = Rule.lineRule(false, "madlib/type", [], [Transformer.ofLineRaw(captureTypes)])
-
+  aliases = Rule.lineRule(false, "madlib/alias", [], [Transformer.ofLineRaw(captureAliases)])
 
   pipe(
-    VFile.fromPath(SOURCE, [typeSig, types]),
+    VFile.fromPath(SOURCE, [typeSig, types, aliases]),
     VFile.postTransform(processSignatures),
+    // VFile.postTransform(processTypesAndAliases),
     Shared.fillfull("Barf!", "Yay!"),
   )(INITIAL_STATE)
 }

@@ -47,6 +47,7 @@ export REGEX = {
     TYPE_SIGNATURE: "^(.*)::\\s?(.*)",
     ASSIGNMENT: "^(export)?\\s?([.\\S]*)\\s?\\=\\s?(.*)",
     TYPES: "^(export)?\\s?type\\s?(.*)",
+    ALIAS: "^(export)?\\s?alias\\s?(.*)",
   },
 }
 
