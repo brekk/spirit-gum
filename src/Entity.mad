@@ -46,25 +46,6 @@ export endMatch = where {
 
 export type Extractor a = Extractor(List NumberedLine -> #[a, String])
 export extractor = Extractor
-
-/*
-  Transformer.ofLineRaw(
-    (state, index, line) => {
-      ref = state
-      match = matcher(state, #[index, line])
-      // existing = Dict.get(entityName)
-      // if (match) {
-      //   Dict.insert state.entities
-      ref.entities := if (match) {
-        List.append(#[entityName, index, line], ref.entities)
-      } else {
-        ref.entities
-      }
-      return #[ref, line]
-    },
-  ),
-*/
-
 export type EntityBlob = Blob(#[Boolean, Boolean], #[Integer, Integer], String)
 
 
