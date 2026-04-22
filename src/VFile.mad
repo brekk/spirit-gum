@@ -45,6 +45,10 @@ export mapState = (f, m) => where(m) {
   ConcreteFile(i, b, x) =>
     ConcreteFile(i, b, f(x))
 }
+
+instance Functor ConcreteFile {
+  map = mapState
+}
 export mapLines = (f, m) => where(m) {
   ConcreteFile(i, b, x) =>
     ConcreteFile(i, f(b), x)

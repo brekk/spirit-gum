@@ -4,7 +4,10 @@ import File from "File"
 import Fn from "Function"
 import IO from "IO"
 import List from "List"
+import Math from "Math"
+import { Just, Nothing } from "Maybe"
 import String from "String"
+import Tuple from "Tuple"
 import Wish from "Wish"
 
 import Entity from "@/Entity"
@@ -21,7 +24,7 @@ import VFile from "@/VFile"
 
 SOURCE = "./src/VFile.mad"
 OUTPUT = "./README.md"
-INITIAL_STATE = { entities: Dict.empty }
+INITIAL_STATE = { entities: Dict.empty, signatures: [] }
 
 /*
 // write the rendered content to a new file 
@@ -89,30 +92,118 @@ processSignatures = (blobs) => {
 }
 
 main = () => {
-  entity = Entity.Entity(
-    "madlib:signature",
-    Entity.SequentialMatcher(
-      (state, lineTuple) => where(lineTuple) {
-        #[_, line] =>
-          String.contains("::", line)
-      },
-      (state, lineTuple) => where(lineTuple) {
-        #[_, line] =>
-          String.match("(.*)\\s=\\s", line)
-      },
-    ),
+  typeSig = Rule.lineRule(
+    false,
+    "madlib/type-signature",
+    [],
+    [
+      Transformer.ofLineRaw(
+        (state, index, line) => {
+          match = String.contains("::", line)
+          return if (match) {
+            pipe(
+              String.replace(Shared.REGEX.CAPTURING.TYPE_SIGNATURE, "$1<><>$2"),
+              String.split("<><>"),
+              map(String.trim),
+              where {
+                [name, signature] =>
+                  log.main(
+                    "hey",
+                    #[
+                      {
+                        ...state,
+                        signatures: [
+                          ...state.signatures,
+                          { name, signature: String.trim(signature), start: index, end: -1 },
+                        ],
+                      },
+                      line,
+                    ],
+                  )
+
+                _ =>
+                  #[state, line]
+              },
+            )(line)
+          } else {
+            #[state, line]
+          }
+        },
+      ),
+      Transformer.ofLineRaw(
+        (state, index, line) => {
+          match = String.match(Shared.REGEX.CAPTURING.ASSIGNMENT, line)
+          return if (match) {
+            pipe(
+              String.trim,
+              String.replace(Shared.REGEX.CAPTURING.ASSIGNMENT, "$1<><>$2"),
+              String.split("<><>"),
+              map(String.trim),
+              log.main("matching?"),
+              where {
+                [exported, expected] =>
+                  pipe(
+                    List.find((x) => x.name == expected),
+                    where {
+                      Just({ signature, name, start }) =>
+                        #[
+                          {
+                            ...state,
+                            signatures: [
+                              ...List.reject((x) => x.name == expected, state.signatures),
+                              { name, signature, start, end: index },
+                            ],
+                          },
+                          line,
+                        ]
+
+                      _ =>
+                        #[state, line]
+                    },
+                  )(state.signatures)
+              },
+            )(line)
+          } else {
+            #[state, line]
+          }
+        },
+      ),
+    ],
   )
 
   pipe(
-    VFile.fromPath(SOURCE, [Entity.toRule(entity)]),
+    VFile.fromPath(SOURCE, [typeSig]),
     map(
       where {
         VFile.ConcreteFile(_, lines, state) =>
           pipe(
-            .entities,
-            Dict.get("entity/madlib:signature/rule/seq"),
+            .signatures,
+            map(
+              (v) => (
+                {
+                  ...v,
+                  signature: Math.abs(v.start - v.end) > 1
+                    ? String.trim(v.signature)
+                      ++ " "
+                      ++ pipe(
+                        List.filter(
+                          where {
+                            Line.ValidLine(i, _) =>
+                              (i > v.start && i < v.end)
+
+                            _ =>
+                              false
+                          },
+                        ),
+                        map(Line.render),
+                        map(String.trim),
+                        String.join(" "),
+                      )(lines)
+                    : v.signature,
+                }
+              ),
+            ),
             log.main("entities"),
-            map(processSignatures),
           )(state)
       },
     ),

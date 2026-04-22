@@ -44,6 +44,8 @@ export REGEX = {
     HEADING: "^(#*)\\s*(.*)",
     MADLIB_FILE: "\\b([\\w\\/\\.]*)\\.mad",
     LIST_ITEM: " - (\\w*)",
+    TYPE_SIGNATURE: "^(.*)::\\s?(.*)",
+    ASSIGNMENT: "^(export)?\\s?([.\\S]*)\\s?\\=\\s?(.*)",
   },
 }
 
