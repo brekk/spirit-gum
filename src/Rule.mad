@@ -69,11 +69,15 @@ select = (fn, filter) => pipe(
 
 export bodyValidators = select(validators, Validator.isBody)
 export lineValidators = select(validators, Validator.isLine)
+
 export bodyTransformers = select(transformers, Transformer.isBody)
 export lineTransformers = select(transformers, Transformer.isLine)
+
 export bodyStateTransformers = select(transformers, Transformer.isBodyState)
 export lineStateTransformers = select(transformers, Transformer.isLineState)
+
 export lineRawTransformers = select(transformers, Transformer.isLineRaw)
+export bodyRawTransformers = select(transformers, Transformer.isBodyRaw)
 
 export isBody = pipe(
   affect,
