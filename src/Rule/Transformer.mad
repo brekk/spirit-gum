@@ -1,12 +1,19 @@
 alias NumberedLine = #[Integer, String]
 
+export alias BodyTransformerFunction a = a -> List NumberedLine -> List NumberedLine
+export alias BodyStateTransformerFunction a = a -> List NumberedLine -> a
+export alias BodyRawTransformerFunction a = a -> List NumberedLine -> #[a, List NumberedLine]
+export alias LineTransformerFunction a = a -> Integer -> String -> String
+export alias LineStateTransformerFunction a = a -> Integer -> String -> a
+export alias LineRawTransformerFunction a = a -> Integer -> String -> #[a, String]
+
 export type Transformer a
-  = BodyTransformer(a -> List NumberedLine -> List NumberedLine)
-  | BodyStateTransformer(a -> List NumberedLine -> a)
-  | BodyRawTransformer(a -> List NumberedLine -> #[a, List NumberedLine])
-  | LineTransformer(a -> Integer -> String -> String)
-  | LineStateTransformer(a -> Integer -> String -> a)
-  | LineRawTransformer(a -> Integer -> String -> #[a, String])
+  = BodyTransformer(BodyTransformerFunction a)
+  | BodyStateTransformer(BodyStateTransformerFunction a)
+  | BodyRawTransformer(BodyRawTransformerFunction a)
+  | LineTransformer(LineTransformerFunction a)
+  | LineStateTransformer(LineStateTransformerFunction a)
+  | LineRawTransformer(LineRawTransformerFunction a)
 
 export ofBody = BodyTransformer
 export ofBodyState = BodyStateTransformer

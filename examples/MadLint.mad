@@ -1,3 +1,7 @@
+import type { TypeDef } from "./MadLint/Type"
+import type { Signature } from "./MadLint/TypeSignature"
+import type { BodyStateTransformerFunction, LineRawTransformerFunction } from "@/Rule/Transformer"
+
 import Compare from "Compare"
 import Dict from "Dictionary"
 import File from "File"
@@ -24,8 +28,18 @@ import VFile from "@/VFile"
 
 
 
+alias NumberedLine = #[Integer, String]
+
+isSignature :: String -> Boolean
 isSignature = Fn.both(String.contains("::"), Shared.isUncommented)
 
+alias STATE = {
+  assignments :: List #[Integer, String, String],
+  signatures :: List Signature,
+  types :: List TypeDef,
+}
+
+captureSignatures :: a -> Integer -> String -> #[a, String]
 captureSignatures = (state, index, line) => #[
   if (isSignature(line)) {
     pipe(
@@ -298,7 +312,7 @@ extractTypeOrAliasName = pipe(
   String.trim,
 )
 
-finalizeType = (_lines, _state, fn, _ex, _name, _bod, _range, _cons) => where(_range) {
+finalizeType = (_lines, _state) => (fn, _ex, _name, _bod, _range, _cons) => where(_range) {
   #[s, e] =>
     if (e < 0) do {
       end = nearestEmptyOrAssignment(s, _lines, _state.signatures, _state.assignments)
