@@ -1,0 +1,52 @@
+export type DefAlias
+  = TypeAlias(Boolean, String, String, #[Integer, Integer], List String)
+  | TypeDef(Boolean, String, String, #[Integer, Integer], List String)
+
+export isAlias = where {
+  TypeAlias(_, _, _, _, _) =>
+    true
+
+  _ =>
+    false
+}
+export exported = where {
+  TypeAlias(x, _, _, _, _) =>
+    x
+
+  TypeDef(x, _, _, _, _) =>
+    x
+}
+export name = where {
+  TypeAlias(_, x, _, _, _) =>
+    x
+
+  TypeDef(_, x, _, _, _) =>
+    x
+}
+export body = where {
+  TypeAlias(_, _, x, _, _) =>
+    x
+
+  TypeDef(_, _, x, _, _) =>
+    x
+}
+export range = where {
+  TypeAlias(_, _, _, x, _) =>
+    x
+
+  TypeDef(_, _, _, x, _) =>
+    x
+}
+export cons = where {
+  TypeAlias(_, _, _, _, x) =>
+    x
+
+  TypeDef(_, _, _, _, x) =>
+    x
+}
+
+
+export PublicType = TypeDef(true)
+export PrivateType = TypeDef(false)
+
+export aliased = (check) => check ? TypeAlias : TypeDef

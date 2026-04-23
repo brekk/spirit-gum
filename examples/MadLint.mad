@@ -5,12 +5,14 @@ import Fn from "Function"
 import IO from "IO"
 import List from "List"
 import Math from "Math"
+import { fromMaybe } from "Maybe"
 import { Just, Nothing } from "Maybe"
 import String from "String"
 import Tuple from "Tuple"
 import Wish from "Wish"
 
-import MadLint from "../examples/MadLint"
+import TypeDef from "./MadLint/Type"
+import TypeSig from "./MadLint/TypeSignature"
 import Shared from "@/ExampleUtilities"
 import Line from "@/Line"
 import { log } from "@/Log"
@@ -22,51 +24,33 @@ import VFile from "@/VFile"
 
 
 
-SOURCE = "./src/VFile.mad"
+isSignature = Fn.both(String.contains("::"), Shared.isUncommented)
 
-
-
-INITIAL_STATE = { assignments: [], signatures: [], types: [] }
-
-/*
-{
-  name,
-  signature: String.trim(signature),
-  range: { start: index, end: -1 },
-  exported: false,
-  takes: [],
-  returns: "",
-},
-*/
-
-captureSignatures = (state, index, line) => {
-  match = Fn.both(String.contains("::"), Shared.isUncommented)(line)
-  return if (match) {
+captureSignatures = (state, index, line) => #[
+  if (isSignature(line)) {
     pipe(
       String.replace(Shared.REGEX.CAPTURING.TYPE_SIGNATURE, "$1<><>$2"),
       String.split("<><>"),
       map(String.trim),
       where {
         [_name, signature] =>
-          #[
-            {
-              ...state,
-              signatures: [
-                ...state.signatures,
-                TypeDef(false, _name, String.trim(signature), #[index, -1], [], ""),
-              ],
-            },
-            line,
-          ]
+          {
+            ...state,
+            signatures: [
+              ...state.signatures,
+              TypeSig.Signature(false, _name, String.trim(signature), #[index, -1], [], ""),
+            ],
+          }
 
         _ =>
-          #[state, line]
+          state
       },
     )(line)
   } else {
-    #[state, line]
-  }
-}
+    state
+  },
+  line,
+]
 
 captureAssignmentsAndExports = (state, index, line) => {
   match = String.match(Shared.REGEX.CAPTURING.ASSIGNMENT, line)
@@ -77,28 +61,17 @@ captureAssignmentsAndExports = (state, index, line) => {
       String.split("<><>"),
       map(String.trim),
       where {
-        [_exported, expected] =>
+        [ex, expected] =>
           pipe(
-            List.find(
-              pipe(
-                name,
-                Fn.equals(expected),
-              ),
-            ),
+            List.find(TypeSig.nameIs(expected)),
             where {
-              Just(TypeDef(_, _name, signature, #[start, _end], _, _)) =>
+              Just(TypeSig.Signature(_, _name, signature, #[start, _end], _, _)) =>
                 #[
                   {
                     ...state,
                     signatures: [
-                      ...List.reject(
-                        pipe(
-                          name,
-                          Fn.equals(expected),
-                        ),
-                        state.signatures,
-                      ),
-                      TypeDef(_exported != "", _name, signature, #[start, index], [], ""),
+                      ...List.reject(TypeSig.nameIs(expected), state.signatures),
+                      TypeSig.Signature(ex != "", _name, signature, #[start, index], [], ""),
                     ],
                   },
                   line,
@@ -106,11 +79,8 @@ captureAssignmentsAndExports = (state, index, line) => {
 
               _ =>
                 #[
-                  _exported != "" && expected != ""
-                    ? {
-                      ...state,
-                      assignments: [...state.assignments, #[index, _exported, expected]],
-                    }
+                  ex != "" && expected != ""
+                    ? { ...state, assignments: [...state.assignments, #[index, ex, expected]] }
                     : state,
                   line,
                 ]
@@ -142,7 +112,7 @@ captureTypeOrAlias = (regex, aliased, state, index, line) => {
                 ...state,
                 types: [
                   ...state.types,
-                  { exported: _exported != "", range: #[index, -1], aliased, typeDef },
+                  TypeDef.aliased(aliased)(_exported != "", typeDef, typeDef, #[index, -1]),
                 ],
               }
             )
@@ -163,7 +133,7 @@ captureAliases = captureTypeOrAlias(Shared.REGEX.CAPTURING.ALIAS, true)
 isUnclosedOpen = Fn.both(Fn.complement(String.contains(")")), String.startsWith("("))
 isUnopenedClose = Fn.both(Fn.complement(String.contains("(")), String.endsWith(")"))
 
-processSignatures = (path, lines, state) => {
+export processSignatures = (path, lines, state) => {
   cleanSig = (start, end, _lines, x) => x
       ++ " "
       ++ pipe(
@@ -239,14 +209,18 @@ processSignatures = (path, lines, state) => {
       .signatures,
       map(
         where {
-          TypeDef(_exported, _name, _signature, _range, _lines, out) =>
-            where(_range) {
-              #[start, end] =>
-                do {
-                  signature = cleanSignature(start, end, lines, _signature)
-                  io = sigToIO(signature)
-                  return TypeDef(_exported, _name, signature, #[start, end], io.inputs, io.output)
-                }
+          TypeSig.Signature(_exported, _name, _signature, #[start, end], _lines, out) =>
+            do {
+              signature = cleanSignature(start, end, lines, _signature)
+              io = sigToIO(signature)
+              return TypeSig.Signature(
+                _exported,
+                _name,
+                signature,
+                #[start, end],
+                io.inputs,
+                io.output,
+              )
             }
         },
       ),
@@ -268,10 +242,6 @@ nearestEmptyOrAssignment = (index, lines, sigs, assignments) => {
             ln = Line.getLineNumber(a)
             overIndex = (ln > index)
             underDeliver = ctx.current < 0 ? true : ln < ctx.current
-            if (overIndex) do {
-              log.main("::", #[index, ctx, ln, underDeliver])
-              return {}
-            }
             // has to be greater than the index
             // and not greater than the previous
             return if (overIndex && underDeliver) {
@@ -286,7 +256,7 @@ nearestEmptyOrAssignment = (index, lines, sigs, assignments) => {
   assLines = map(where { #[i, _, _] => Line.EmptyLine(i) }, assignments)
   sigLines = chain(
     (x) => pipe(
-      range,
+      TypeSig.range,
       where {
         #[a, z] =>
           [a, z]
@@ -318,33 +288,49 @@ segment = (_lines, _range) => where(_range) {
     )(_lines)
 }
 
+extractTypeOrAliasName = pipe(
+  String.split("="),
+  List.first,
+  fromMaybe(""),
+  String.replace("export", ""),
+  String.replace("type", ""),
+  String.replace("alias", ""),
+  String.trim,
+)
 
-processTypesAndAliases = (path, _lines, _state) => {
-  segmentLines = segment(_lines)
+finalizeType = (_lines, _state, fn, _ex, _name, _bod, _range, _cons) => where(_range) {
+  #[s, e] =>
+    if (e < 0) do {
+      end = nearestEmptyOrAssignment(s, _lines, _state.signatures, _state.assignments)
+      range = #[s, end]
+      typeDef = pipe(
+        segment(_lines),
+        map(String.trim),
+        List.reject(
+          pipe(
+            String.trim,
+            String.startsWith("//"),
+          ),
+        ),
+        String.unwords,
+        Shared.removeTrailingComma,
+      )(range)
+      return fn(_ex, extractTypeOrAliasName(typeDef), typeDef, range, _cons)
+    } else {
+      fn(_ex, _name, _bod, _range, _cons)
+    }
+}
+
+
+export processTypesAndAliases = (path, _lines, _state) => {
+  finalize = finalizeType(_lines, _state)
   findEndsOfTypes = map(
-    (ty) => where(ty.range) {
-      #[s, e] =>
-        if (e < 0) do {
-          end = nearestEmptyOrAssignment(s, _lines, _state.signatures, _state.assignments)
-          _range = #[s, end]
-          typeDef = pipe(
-            log.main("-->"),
-            segmentLines,
-            map(String.trim),
-            log.main("------>"),
-            List.reject(
-              pipe(
-                String.trim,
-                String.startsWith("//"),
-              ),
-            ),
-            String.unwords,
-            Shared.removeTrailingComma,
-          )(_range)
-          return { ...ty, range: _range, typeDef }
-        } else {
-          ty
-        }
+    (ty) => where(ty) {
+      TypeDef.TypeAlias(_ex, _name, _bod, _range, _cons) =>
+        finalize(TypeDef.TypeAlias, _ex, _name, _bod, _range, _cons)
+
+      TypeDef.TypeDef(_ex, _name, _bod, _range, _cons) =>
+        finalize(TypeDef.TypeDef, _ex, _name, _bod, _range, _cons)
     },
   )
   return VFile.ConcreteFile(
@@ -360,22 +346,13 @@ processTypesAndAliases = (path, _lines, _state) => {
   )
 }
 
+typeSig = Rule.lineRule(
+  false,
+  "madlib/type-signature",
+  [],
+  [Transformer.ofLineRaw(captureSignatures), Transformer.ofLineRaw(captureAssignmentsAndExports)],
+)
+types = Rule.lineRule(false, "madlib/type", [], [Transformer.ofLineRaw(captureTypes)])
+aliases = Rule.lineRule(false, "madlib/type/alias", [], [Transformer.ofLineRaw(captureAliases)])
 
-main = () => {
-  typeSig = Rule.lineRule(
-    false,
-    "madlib/type-signature",
-    [],
-    [Transformer.ofLineRaw(captureSignatures), Transformer.ofLineRaw(captureAssignmentsAndExports)],
-  )
-  types = Rule.lineRule(false, "madlib/type", [], [Transformer.ofLineRaw(captureTypes)])
-  aliases = Rule.lineRule(false, "madlib/type/alias", [], [Transformer.ofLineRaw(captureAliases)])
-
-  pipe(
-    VFile.fromPath(SOURCE, [typeSig, types, aliases]),
-    VFile.postTransform(processSignatures),
-    map(log.main("processed?!")),
-    VFile.postTransform(processTypesAndAliases),
-    Shared.fillfull("Barf!", "Yay!"),
-  )(INITIAL_STATE)
-}
+export RULES = [typeSig, types, aliases]
