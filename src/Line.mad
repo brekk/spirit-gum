@@ -4,6 +4,7 @@ import type { VFileError } from "@/Errors"
 import type { Rule } from "@/Rule"
 import type { Transformer } from "@/Rule/Transformer"
 
+import { EQ, GT, LT } from "Compare"
 import Fn from "Function"
 import List from "List"
 import { fromMaybe } from "Maybe"
@@ -24,8 +25,14 @@ export type VFileLine
   | ValidLine(Integer, String)
   | EmptyLine(Integer)
 // if you uncomment this, it yells about VFileError needing to be comparable (defined in src/Errors.mad)
-// derive Comparable VFileLine
 
+instance Comparable VFileLine {
+  compare = (a, b) => {
+    _a = getLineNumber(a)
+    _b = getLineNumber(b)
+    return _a == _b ? EQ : _a < _b ? LT : GT
+  }
+}
 // we need something that allows for accumulation / collapse
 export type LineRange = LineRange(Integer, Integer, List VFileLine)
 
@@ -40,6 +47,29 @@ export getLineNumber = where {
   EmptyLine(i) =>
     i
 }
+
+export isEmpty = where {
+  EmptyLine(_) =>
+    true
+
+  _ =>
+    false
+}
+export isValid = where {
+  ValidLine(_) =>
+    true
+
+  _ =>
+    false
+}
+export isInvalid = where {
+  InvalidLine(_) =>
+    true
+
+  _ =>
+    false
+}
+
 
 export hasNoRemainingLineRules = pipe(
   List.filter(Rule.isLine),
