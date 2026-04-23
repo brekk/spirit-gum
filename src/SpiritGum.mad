@@ -1,0 +1,38 @@
+import type { KnownVFileErrorKind } from "@/Errors"
+
+import _Errors from "@/Errors"
+import _Line from "@/Line"
+import _List from "@/List"
+import _Rule from "@/Rule"
+import _Transformer from "@/Rule/Transformer"
+import _Validator from "@/Rule/Validator"
+import _Template from "@/Template"
+import _VFile from "@/VFile"
+
+
+
+export type FileError = KnownVFileErrorKind
+
+export Errors = {
+  ERRORS: _Errors.ERRORS,
+  StaticError: _Errors.StaticError,
+  VFInvalidSource: _Errors.VFInvalidSource,
+  VFInvalidShape: _Errors.VFInvalidShape,
+  DynamicError: _Errors.DynamicError,
+}
+
+export Line = {
+  InvalidLine: _Line.InvalidLine,
+  ValidLine: _Line.ValidLine,
+  EmptyLine: _Line.EmptyLine,
+  LineRange: _Line.LineRange,
+  getLineNumber: _Line.getLineNumber,
+  isEmpty: _Line.isEmpty,
+  isValid: _Line.isValid,
+  isInvalid: _Line.isInvalid,
+  safeRender: _Line.safeRender,
+  render: _Line.render,
+  transform: _Line.transformLine,
+  processRules: _Line.processRules,
+}
+export List = {}
