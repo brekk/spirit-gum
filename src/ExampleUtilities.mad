@@ -41,6 +41,9 @@ export capitalize = Fn.when(
 export REGEX = {
   NON_WORD_AND_SPACES: "[\\W\\s]",
   COMMA_SPACE_CLOSED: ",\\s\\)",
+  LEADING_EXPORT: "^export\\>",
+  TYPE: "\\<type\\>",
+  ALIAS: "\\<alias\\>",
   CAPTURING: {
     HEADING: "^(#*)\\s*(.*)",
     MADLIB_FILE: "\\b([\\w\\/\\.]*)\\.mad",
@@ -48,8 +51,8 @@ export REGEX = {
     TYPE_SIGNATURE: "^(.*)::\\s?(.*)",
     ASSIGNMENT: "^(export)?\\s?([.\\S]*)\\s?\\=\\s?(.*)",
     TYPES: "^(export)?\\s?type\\s?(.*)",
-    TYPES_COMPLETE: "^(export)?\\s?(type\\|alias)\\s?(.*)\\s?\\=\\s?(.*)",
-    ALIAS: "^(export)?\\s?alias\\s?(.*)",
+    TYPES_COMPLETE: "^(export)?\\s?(type\\|alias)\\>\\s?(.*)\\s?\\=\\s?(.*)",
+    ALIAS: "^(export)?\\s?alias\\>\\s?(.*)",
   },
 }
 
