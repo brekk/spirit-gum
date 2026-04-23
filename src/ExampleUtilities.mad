@@ -40,6 +40,7 @@ export capitalize = Fn.when(
 
 export REGEX = {
   NON_WORD_AND_SPACES: "[\\W\\s]",
+  COMMA_SPACE_CLOSED: ",\\s\\)",
   CAPTURING: {
     HEADING: "^(#*)\\s*(.*)",
     MADLIB_FILE: "\\b([\\w\\/\\.]*)\\.mad",
@@ -47,9 +48,12 @@ export REGEX = {
     TYPE_SIGNATURE: "^(.*)::\\s?(.*)",
     ASSIGNMENT: "^(export)?\\s?([.\\S]*)\\s?\\=\\s?(.*)",
     TYPES: "^(export)?\\s?type\\s?(.*)",
+    TYPES_COMPLETE: "^(export)?\\s?(type\\|alias)\\s?(.*)\\s?\\=\\s?(.*)",
     ALIAS: "^(export)?\\s?alias\\s?(.*)",
   },
 }
+
+export removeTrailingComma = String.replace(REGEX.COMMA_SPACE_CLOSED, " )")
 
 export slug = pipe(
   String.toLower,
