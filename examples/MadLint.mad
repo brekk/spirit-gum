@@ -207,10 +207,7 @@ export processSignatures = (path, lines, state) => {
   sigToIO = pipe(
     String.split("->"),
     map(String.trim),
-    (parts) => where(#[
-      List.slice(0, List.length(parts) - 2, parts),
-      List.nth(List.length(parts) - 1, parts),
-    ]) {
+    (parts) => where(#[List.slice(0, List.length(parts) - 1, parts), List.last(parts)]) {
       #[head, Just(end)] =>
         ({ inputs: head, output: end })
 
@@ -238,7 +235,7 @@ export processSignatures = (path, lines, state) => {
                 _name,
                 signature,
                 #[start, end],
-                io.inputs,
+                log.line("@@@", List.slice(0, List.length(io.inputs) - 2, io.inputs)),
                 io.output,
               )
             }
