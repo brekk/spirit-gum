@@ -1,3 +1,4 @@
+import type { VFileError } from "@/Errors"
 import type {
   BodyRawTransformerFunction,
   BodyStateTransformerFunction,
@@ -23,6 +24,7 @@ import _VFile from "@/VFile"
 // export type FileError = KnownVFileErrorKind
 
 // export ERRORS
+export type VFileError
 export StaticError
 export VFInvalidSource
 export VFInvalidShape
