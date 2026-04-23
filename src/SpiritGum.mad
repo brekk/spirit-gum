@@ -11,7 +11,14 @@ import type { Validator } from "@/Rule/Validator"
 import type { FileTemplate, Renderer } from "@/Template"
 import type { ConcreteFile, Processor, VFile, VirtualFile, WishCFile } from "@/VFile"
 
-import { DynamicError, StaticError, VFInvalidShape, VFInvalidSource } from "@/Errors"
+import {
+  DynamicError,
+  InvalidShape,
+  InvalidSource,
+  StaticError,
+  VFInvalidShape,
+  VFInvalidSource,
+} from "@/Errors"
 import _Line from "@/Line"
 import _Rule from "@/Rule"
 import _Transformer from "@/Rule/Transformer"
@@ -29,6 +36,8 @@ export StaticError
 export VFInvalidSource
 export VFInvalidShape
 export DynamicError
+export InvalidSource
+export InvalidShape
 
 export InvalidLine = _Line.InvalidLine
 export ValidLine = _Line.ValidLine
