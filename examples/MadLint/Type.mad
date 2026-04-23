@@ -1,52 +1,68 @@
-export type DefAlias
-  = TypeAlias(Boolean, String, String, #[Integer, Integer], List String)
-  | TypeDef(Boolean, String, String, #[Integer, Integer], List String)
+import type { Maybe } from "Maybe"
 
+
+
+export type Definition
+  = DefAlias(Boolean, String, String, #[Integer, Integer], Maybe (List String))
+  | Def(Boolean, String, String, #[Integer, Integer], Maybe (List String))
+
+isAlias :: Definition -> Boolean
 export isAlias = where {
-  TypeAlias(_, _, _, _, _) =>
+  DefAlias(_, _, _, _, _) =>
     true
 
   _ =>
     false
 }
+
+exported :: Definition -> Boolean
 export exported = where {
-  TypeAlias(x, _, _, _, _) =>
+  DefAlias(x, _, _, _, _) =>
     x
 
-  TypeDef(x, _, _, _, _) =>
+  Def(x, _, _, _, _) =>
     x
 }
+
+
+name :: Definition -> String
 export name = where {
-  TypeAlias(_, x, _, _, _) =>
+  DefAlias(_, x, _, _, _) =>
     x
 
-  TypeDef(_, x, _, _, _) =>
+  Def(_, x, _, _, _) =>
     x
 }
+
+body :: Definition -> String
 export body = where {
-  TypeAlias(_, _, x, _, _) =>
+  DefAlias(_, _, x, _, _) =>
     x
 
-  TypeDef(_, _, x, _, _) =>
+  Def(_, _, x, _, _) =>
     x
 }
+
+range :: Definition -> #[Integer, Integer]
 export range = where {
-  TypeAlias(_, _, _, x, _) =>
+  DefAlias(_, _, _, x, _) =>
     x
 
-  TypeDef(_, _, _, x, _) =>
+  Def(_, _, _, x, _) =>
     x
 }
+
+cons :: Definition -> Maybe (List String)
 export cons = where {
-  TypeAlias(_, _, _, _, x) =>
+  DefAlias(_, _, _, _, x) =>
     x
 
-  TypeDef(_, _, _, _, x) =>
+  Def(_, _, _, _, x) =>
     x
 }
 
 
-export PublicType = TypeDef(true)
-export PrivateType = TypeDef(false)
+export PublicType = Def(true)
+export PrivateType = Def(false)
 
-export aliased = (check) => check ? TypeAlias : TypeDef
+export aliased = (check) => check ? DefAlias : Def

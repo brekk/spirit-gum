@@ -1,4 +1,4 @@
-import type { TypeDef } from "./MadLint/Type"
+import type { Definition } from "./MadLint/Type"
 import type { Signature } from "./MadLint/TypeSignature"
 import type { BodyStateTransformerFunction, LineRawTransformerFunction } from "@/Rule/Transformer"
 
@@ -33,13 +33,13 @@ alias NumberedLine = #[Integer, String]
 isSignature :: String -> Boolean
 isSignature = Fn.both(String.contains("::"), Shared.isUncommented)
 
-alias STATE = {
+export alias State = {
   assignments :: List #[Integer, String, String],
   signatures :: List Signature,
-  types :: List TypeDef,
+  types :: List Definition,
 }
 
-captureSignatures :: a -> Integer -> String -> #[a, String]
+captureSignatures :: State -> Integer -> String -> #[State, String]
 captureSignatures = (state, index, line) => #[
   if (isSignature(line)) {
     pipe(
@@ -126,7 +126,13 @@ captureTypeOrAlias = (regex, aliased, state, index, line) => {
                 ...state,
                 types: [
                   ...state.types,
-                  TypeDef.aliased(aliased)(_exported != "", typeDef, typeDef, #[index, -1]),
+                  TypeDef.aliased(aliased)(
+                    _exported != "",
+                    typeDef,
+                    typeDef,
+                    #[index, -1],
+                    Nothing,
+                  ),
                 ],
               }
             )
@@ -306,10 +312,23 @@ extractTypeOrAliasName = pipe(
   String.split("="),
   List.first,
   fromMaybe(""),
-  String.replace("export", ""),
-  String.replace("type", ""),
-  String.replace("alias", ""),
+  String.replace(Shared.REGEX.LEADING_EXPORT, ""),
   String.trim,
+  String.replace(Shared.REGEX.TYPE, ""),
+  String.trim,
+  String.replace(Shared.REGEX.ALIAS, ""),
+  String.trim,
+)
+
+extractConstructors = pipe(
+  String.split("="),
+  List.last,
+  map(
+    pipe(
+      String.split("|"),
+      map(String.trim),
+    ),
+  ),
 )
 
 finalizeType = (_lines, _state) => (fn, _ex, _name, _bod, _range, _cons) => where(_range) {
@@ -329,7 +348,7 @@ finalizeType = (_lines, _state) => (fn, _ex, _name, _bod, _range, _cons) => wher
         String.unwords,
         Shared.removeTrailingComma,
       )(range)
-      return fn(_ex, extractTypeOrAliasName(typeDef), typeDef, range, _cons)
+      return fn(_ex, extractTypeOrAliasName(typeDef), typeDef, range, extractConstructors(typeDef))
     } else {
       fn(_ex, _name, _bod, _range, _cons)
     }
@@ -340,11 +359,11 @@ export processTypesAndAliases = (path, _lines, _state) => {
   finalize = finalizeType(_lines, _state)
   findEndsOfTypes = map(
     (ty) => where(ty) {
-      TypeDef.TypeAlias(_ex, _name, _bod, _range, _cons) =>
-        finalize(TypeDef.TypeAlias, _ex, _name, _bod, _range, _cons)
+      TypeDef.DefAlias(_ex, _name, _bod, _range, _cons) =>
+        finalize(TypeDef.DefAlias, _ex, _name, _bod, _range, _cons)
 
-      TypeDef.TypeDef(_ex, _name, _bod, _range, _cons) =>
-        finalize(TypeDef.TypeDef, _ex, _name, _bod, _range, _cons)
+      TypeDef.Def(_ex, _name, _bod, _range, _cons) =>
+        finalize(TypeDef.Def, _ex, _name, _bod, _range, _cons)
     },
   )
   return VFile.ConcreteFile(

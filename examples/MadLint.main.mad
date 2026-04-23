@@ -1,3 +1,7 @@
+import type { State } from "./MadLint"
+import type { VFileError } from "@/Errors"
+import type { ConcreteFile } from "@/VFile"
+
 import Compare from "Compare"
 import Dict from "Dictionary"
 import File from "File"
@@ -22,22 +26,29 @@ import VFile from "@/VFile"
 
 
 
-// SOURCE = "./src/VFile.mad"
-SOURCE = "./src/Rule/Transformer.mad"
+SOURCE = "./src/VFile.mad"
+SOURCE2 = "./src/Rule/Transformer.mad"
+SOURCE3 = "./examples/MadLint/Type.mad"
 
 
 
+INITIAL_STATE :: State
 INITIAL_STATE = { assignments: [], signatures: [], types: [] }
 
 
 
+// map(log.main("processed?!")),
 
 main = () => {
-  pipe(
-    VFile.fromPath(SOURCE, MadLint.RULES),
+  doIt :: String -> Wish VFileError (ConcreteFile a)
+  doIt = (v) => pipe(
+    VFile.fromPath(v, MadLint.RULES),
     VFile.postTransform(MadLint.processSignatures),
-    // map(log.main("processed?!")),
     VFile.postTransform(MadLint.processTypesAndAliases),
-    Shared.fillfull("Barf!", "Yay!"),
   )(INITIAL_STATE)
+  pipe(
+    map(doIt),
+    Wish.parallel,
+    Shared.fillfull("Barf!", "Yay!"),
+  )([SOURCE, SOURCE2, SOURCE3])
 }
