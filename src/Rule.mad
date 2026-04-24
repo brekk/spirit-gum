@@ -38,7 +38,7 @@ cannot = (yes, v, t) => {
     ++ pipe(
       List.reject(String.isEmpty),
       String.join(" or "),
-    )([v ? b ++ " validators " : "", t ? b ++ " transformers" ++ t : ""])
+    )([v ? b ++ " validators" : "", t ? b ++ " transformers" : ""])
 }
 
 
@@ -58,6 +58,18 @@ export type Rule a
   )
   | InvalidBodyRule(String)
   | InvalidLineRule(String)
+
+export isInvalid = where {
+  InvalidBodyRule(_) =>
+    true
+
+  InvalidLineRule(_) =>
+    true
+
+  _ =>
+    false
+}
+export isValid = Fn.complement(isInvalid)
 
 export create = (aff, fix, _id, vals, trans) => {
   isBod = aff == BodyAffect

@@ -8,6 +8,7 @@ import type { Transformer } from "@/Rule/Transformer"
 import type { Validator } from "@/Rule/Validator"
 
 import File from "File"
+import Fn from "Function"
 import List from "List"
 import { Just, Nothing } from "Maybe"
 import String from "String"
@@ -239,21 +240,31 @@ export vFileFromPath = (name, src, rules, state) => pipe(
 )(src)
 
 fromPath :: String -> List (Rule a) -> a -> WishCFile a
-export fromPath = (src, rules, state) => pipe(
-  File.read,
-  forceVFileError,
-  map(cfileWithState(src, rules, state)),
-  chain(
-    where {
-      #[valid, cFile] =>
-        if (valid) {
-          Wish.good(cFile)
-        } else {
-          Wish.bad(Errors.InvalidShape)
-        }
-    },
+export fromPath = (src, rules, state) => Fn.ifElse(
+  List.any(Rule.isInvalid),
+  pipe(
+    List.filter(Rule.isInvalid),
+    map(Rule.id),
+    String.join(" & "),
+    Errors.DynamicError,
+    Wish.bad,
   ),
-)(src)
+  (_rules) => pipe(
+    File.read,
+    forceVFileError,
+    map(cfileWithState(src, _rules, state)),
+    chain(
+      where {
+        #[valid, cFile] =>
+          if (valid) {
+            Wish.good(cFile)
+          } else {
+            Wish.bad(Errors.InvalidShape)
+          }
+      },
+    ),
+  )(src),
+)(rules)
 
 postTransform :: (String -> List VFileLine -> a -> b) -> WishCFile a -> Wish VFileError b
 export postTransform = (fn, wfile) => map(
