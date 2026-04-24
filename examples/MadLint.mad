@@ -235,7 +235,7 @@ export processSignatures = (path, lines, state) => {
                 _name,
                 signature,
                 #[start, end],
-                log.line("@@@", List.slice(0, List.length(io.inputs) - 2, io.inputs)),
+                List.slice(0, List.length(io.inputs) - 2, io.inputs),
                 io.output,
               )
             }
@@ -385,4 +385,4 @@ typeSig = Rule.lineRule(
 types = Rule.lineRule(false, "madlib/type", [], [Transformer.ofLineRaw(captureTypes)])
 aliases = Rule.lineRule(false, "madlib/type/alias", [], [Transformer.ofLineRaw(captureAliases)])
 
-export RULES = [typeSig, types, aliases]
+export RULES = IO.trace("RULES?", [typeSig, types, aliases])

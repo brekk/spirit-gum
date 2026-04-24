@@ -3,6 +3,7 @@ import type { Validator } from "@/Rule/Validator"
 
 import Fn from "Function"
 import List from "List"
+import String from "String"
 
 import { log } from "@/Log"
 import Transformer from "@/Rule/Transformer"
@@ -25,6 +26,23 @@ alias Id = String
 // we need to eventually make rules "fixable"
 
 
+isLineStr = (yes) => yes ? "line" : "body"
+
+cannot = (yes, v, t) => {
+  a = isLineStr(yes)
+  b = isLineStr(!yes)
+
+  return "Cannot create a "
+    ++ a
+    ++ " rule with: "
+    ++ pipe(
+      List.reject(String.isEmpty),
+      String.join(" or "),
+    )([v ? b ++ " validators " : "", t ? b ++ " transformers" ++ t : ""])
+}
+
+
+
 export type Rule a
   = Rule(
     // affect
@@ -38,29 +56,73 @@ export type Rule a
     // transformers
     List (Transformer a),
   )
+  | InvalidBodyRule(String)
+  | InvalidLineRule(String)
 
-export bodyRule = Rule(BodyAffect)
-export lineRule = Rule(LineAffect)
+export create = (aff, fix, _id, vals, trans) => {
+  isBod = aff == BodyAffect
+  return if (isBod) do {
+    lineT = List.any(Transformer.lineAffect, trans)
+    lineV = List.any(Validator.isLine, vals)
+    return if (lineT || lineV) {
+      InvalidBodyRule(cannot(false, lineV, lineT))
+    } else {
+      Rule(aff, fix, _id, vals, trans)
+    }
+  } else do {
+    bodyT = List.any(Transformer.bodyAffect, trans)
+    bodyV = List.any(Validator.isBody, vals)
+    return if (bodyT || bodyV) {
+      InvalidLineRule(cannot(true, bodyV, bodyT))
+    } else {
+      Rule(aff, fix, _id, vals, trans)
+    }
+  }
+}
+
+export bodyRule = create(BodyAffect)
+export lineRule = create(LineAffect)
 
 export affect = where {
   Rule(x, _, _, _, _) =>
     x
+
+  InvalidBodyRule(_) =>
+    BodyAffect
+
+  _ =>
+    LineAffect
 }
 export fixable = where {
   Rule(_, x, _, _, _) =>
     x
+
+  _ =>
+    false
 }
 export id = where {
   Rule(_, _, x, _, _) =>
+    x
+
+  InvalidBodyRule(x) =>
+    x
+
+  InvalidLineRule(x) =>
     x
 }
 export validators = where {
   Rule(_, _, _, x, _) =>
     x
+
+  _ =>
+    []
 }
 export transformers = where {
   Rule(_, _, _, _, x) =>
     x
+
+  _ =>
+    []
 }
 select = (fn, filter) => pipe(
   fn,

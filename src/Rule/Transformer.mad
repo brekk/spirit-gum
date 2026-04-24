@@ -1,3 +1,7 @@
+import Fn from "Function"
+
+
+
 alias NumberedLine = #[Integer, String]
 
 export alias BodyTransformerFunction a = a -> List NumberedLine -> List NumberedLine
@@ -22,6 +26,21 @@ export ofBodyRaw = BodyRawTransformer
 export ofLine = LineTransformer
 export ofLineState = LineStateTransformer
 export ofLineRaw = LineRawTransformer
+
+export bodyAffect = where {
+  BodyTransformer(_) =>
+    true
+
+  BodyStateTransformer(_) =>
+    true
+
+  BodyRawTransformer(_) =>
+    true
+
+  _ =>
+    false
+}
+export lineAffect = Fn.complement(bodyAffect)
 
 isBody :: Transformer a -> Boolean
 export isBody = where {

@@ -40,6 +40,7 @@ INITIAL_STATE = { assignments: [], signatures: [], types: [] }
 // map(log.main("processed?!")),
 
 main = () => {
+  log.main("hey!", MadLint.RULES)
   doIt :: String -> Wish VFileError (ConcreteFile a)
   doIt = (v) => pipe(
     VFile.fromPath(v, MadLint.RULES),

@@ -127,7 +127,10 @@ processBodyTransformers = (state, transformers, body) => {
 
 encodeStateByLine :: a -> List (Rule a) -> List NumberedLine -> #[a, List VFileLine]
 encodeStateByLine = (state, rules, lines) => {
-  ruler = Line.processRules(rules)
+  ruler = pipe(
+    tapped.vfileR("loading line rules:", map(Rule.id)),
+    Line.processRules,
+  )(rules)
   helper = (x, stack, processed) => where(stack) {
     [] =>
       #[x, processed]
@@ -216,6 +219,7 @@ export vfileWithState = (vFileName, srcPath, rules, state, rawBod) => pipe(
 
 
 export alias VFile a = Wish VFileError (VirtualFile a)
+export alias WishCFile a = Wish VFileError (ConcreteFile a)
 
 vFileFromPath :: String -> String -> List (Rule a) -> a -> VFile a
 export vFileFromPath = (name, src, rules, state) => pipe(
@@ -233,9 +237,6 @@ export vFileFromPath = (name, src, rules, state) => pipe(
     },
   ),
 )(src)
-
-
-export alias WishCFile a = Wish VFileError (ConcreteFile a)
 
 fromPath :: String -> List (Rule a) -> a -> WishCFile a
 export fromPath = (src, rules, state) => pipe(
