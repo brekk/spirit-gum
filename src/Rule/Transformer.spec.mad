@@ -5,19 +5,31 @@ import Transformer from "@/Rule/Transformer"
 
 
 // meta body
-bodyTrans = Transformer.BodyTransformer((_, body) => body)
+bodyTrans = Transformer.ofBody((_, body) => body)
 // meta index line
-lineTrans = Transformer.LineTransformer((_, _, line) => line)
+lineTrans = Transformer.ofLine((_, _, line) => line)
 // meta numBody
-bodyStateTrans = Transformer.BodyStateTransformer((meta, _) => meta)
+bodyStateTrans = Transformer.ofBodyState((meta, _) => meta)
 // meta index content
-lineStateTrans = Transformer.LineStateTransformer((meta, _, _) => meta)
+lineStateTrans = Transformer.ofLineState((meta, _, _) => meta)
 // meta index line
-lineRawTrans = Transformer.LineRawTransformer((meta, _, line) => #[meta, line])
+lineRawTrans = Transformer.ofLineRaw((meta, _, line) => #[meta, line])
 // meta body
-bodyRawTrans = Transformer.BodyRawTransformer((meta, body) => #[meta, body])
+bodyRawTrans = Transformer.ofBodyRaw((meta, body) => #[meta, body])
 
 
+report(
+  Transformer.bodyAffect,
+  "Transformer.bodyAffect",
+  [
+    #[bodyTrans, true],
+    #[lineTrans, false],
+    #[bodyStateTrans, true],
+    #[lineStateTrans, false],
+    #[lineRawTrans, false],
+    #[bodyRawTrans, true],
+  ],
+)
 report(
   Transformer.isBody,
   "Transformer.isBody",

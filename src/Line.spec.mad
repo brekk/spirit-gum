@@ -138,14 +138,7 @@ testProcessRules(
   [
     #[
       #[
-        [
-          Rule.lineRule(
-            false,
-            "test/spirit-gum/Line/processRules",
-            [Validator.lineAlwaysValid],
-            RULE_TRANSFORM_HARNESS,
-          ),
-        ],
+        [Rule.lineRule(false, "test/spirit-gum/Line/processRules", [], RULE_TRANSFORM_HARNESS)],
         { one: false, two: false },
         #[100, "line"],
       ],

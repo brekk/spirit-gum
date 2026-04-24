@@ -7,8 +7,6 @@ import Validator from "@/Rule/Validator"
 bodyVal = (_, _) => true
 lineVal = (_, _, _) => true
 
-// Study.report(Validator.ofLine, "ofLine ~ lineAlwaysValid", [#[lineVal, Validator.lineAlwaysValid]])
-// Study.report(Validator.ofBody, "ofBody ~ bodyAlwaysValid", [#[bodyVal, Validator.bodyAlwaysValid]])
 
 Study.report(
   pipe(

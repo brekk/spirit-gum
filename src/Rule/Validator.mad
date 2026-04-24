@@ -19,7 +19,3 @@ export isBody = where {
 }
 
 export isLine = Fn.complement(isBody)
-
-
-export lineAlwaysValid = LineValidator((_, _, _) => true)
-export bodyAlwaysValid = BodyValidator((_, _) => true)
