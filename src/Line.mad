@@ -48,6 +48,7 @@ export getLineNumber = where {
     i
 }
 
+isEmpty :: VFileLine -> Boolean
 export isEmpty = where {
   EmptyLine(_) =>
     true
@@ -55,15 +56,19 @@ export isEmpty = where {
   _ =>
     false
 }
+
+isValid :: VFileLine -> Boolean
 export isValid = where {
-  ValidLine(_) =>
+  ValidLine(_, _) =>
     true
 
   _ =>
     false
 }
+
+isInvalid :: VFileLine -> Boolean
 export isInvalid = where {
-  InvalidLine(_) =>
+  InvalidLine(_, _) =>
     true
 
   _ =>

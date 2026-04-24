@@ -1,3 +1,4 @@
+import List from "List"
 import { Just, Nothing } from "Maybe"
 
 import { caseN3, caseN4, report } from "Study"
@@ -19,7 +20,59 @@ report(
     #[Line.EmptyLine(1000), 1000],
   ],
 )
+
+report(
+  List.sort,
+  "Lines are comparable",
+  [
+    #[
+      [
+        Line.EmptyLine(1),
+        Line.InvalidLine(10000, Errors.DynamicError("Bad")),
+        Line.ValidLine(1000, "Cool"),
+        Line.EmptyLine(2),
+        Line.ValidLine(2, "hey"),
+      ],
+      [
+        Line.EmptyLine(1),
+        Line.EmptyLine(2),
+        Line.ValidLine(2, "hey"),
+        Line.ValidLine(1000, "Cool"),
+        Line.InvalidLine(10000, Errors.DynamicError("Bad")),
+      ],
+    ],
+  ],
+)
 report(Line.hasNoRemainingLineRules, "Line.hasNoRemainingLineRules", [#[[], true]])
+report(
+  Line.isEmpty,
+  "Line.isEmpty",
+  [
+    #[Line.EmptyLine(1), true],
+    #[Line.ValidLine(2, "no"), false],
+    #[Line.InvalidLine(3, Errors.DynamicError("nope")), false],
+  ],
+)
+
+report(
+  Line.isValid,
+  "Line.isValid",
+  [
+    #[Line.EmptyLine(1), false],
+    #[Line.ValidLine(2, "no"), true],
+    #[Line.InvalidLine(3, Errors.DynamicError("nope")), false],
+  ],
+)
+report(
+  Line.isInvalid,
+  "Line.isInvalid",
+  [
+    #[Line.EmptyLine(1), false],
+    #[Line.ValidLine(2, "no"), false],
+    #[Line.InvalidLine(3, Errors.DynamicError("nope")), true],
+  ],
+)
+
 report(
   Line.safeRender,
   "Line.safeRender - render maybe-wrapped values",
