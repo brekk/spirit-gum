@@ -1,6 +1,6 @@
 {
   "name": "spirit-gum",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "main": "src/SpiritGum.mad",
   "importAliases": {
     ".": "src"
