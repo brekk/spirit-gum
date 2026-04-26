@@ -1,18 +1,8 @@
 import Compare from "Compare"
-import File from "File"
 import Fn from "Function"
 import IO from "IO"
-import List from "List"
 import String from "String"
 import Wish from "Wish"
-
-import Line from "@/Line"
-import { log } from "@/Log"
-import Rule from "@/Rule"
-import Transformer from "@/Rule/Transformer"
-import Validator from "@/Rule/Validator"
-import Template from "@/Template"
-import VFile from "@/VFile"
 
 
 

@@ -1,4 +1,5 @@
 import type { VFileError } from "@/Errors"
+import type { VFileLine } from "@/Line"
 import type {
   BodyRawTransformerFunction,
   BodyStateTransformerFunction,
@@ -38,6 +39,8 @@ export VFInvalidShape
 export DynamicError
 export InvalidSource
 export InvalidShape
+
+export type VFileLine
 
 export InvalidLine = _Line.InvalidLine
 export ValidLine = _Line.ValidLine

@@ -1,24 +1,6 @@
-import Compare from "Compare"
-import Dict from "Dictionary"
-import File from "File"
-import Fn from "Function"
 import IO from "IO"
-import List from "List"
-import Math from "Math"
-import { Just, Nothing } from "Maybe"
-import String from "String"
-import Tuple from "Tuple"
-import Wish from "Wish"
 
-import Shared from "@/ExampleUtilities"
-import Line from "@/Line"
-import { log } from "@/Log"
-import Rule from "@/Rule"
-import Transformer from "@/Rule/Transformer"
-import Validator from "@/Rule/Validator"
 import SpiritGum from "@/SpiritGum"
-import Template from "@/Template"
-import VFile from "@/VFile"
 
 
 

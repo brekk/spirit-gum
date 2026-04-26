@@ -1,10 +1,7 @@
-import Compare from "Compare"
 import File from "File"
 import Fn from "Function"
-import IO from "IO"
 import List from "List"
 import String from "String"
-import Wish from "Wish"
 
 import Shared from "@/ExampleUtilities"
 import Line from "@/Line"
