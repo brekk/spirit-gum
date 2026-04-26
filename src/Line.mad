@@ -24,7 +24,8 @@ export type VFileLine
   = InvalidLine(Integer, VFileError)
   | ValidLine(Integer, String)
   | EmptyLine(Integer)
-// if you uncomment this, it yells about VFileError needing to be comparable (defined in src/Errors.mad)
+  | VirtualLine(String)
+
 
 instance Comparable VFileLine {
   compare = (a, b) => {
@@ -46,6 +47,9 @@ export getLineNumber = where {
 
   EmptyLine(i) =>
     i
+
+  VirtualLine(_) =>
+    -1
 }
 
 isEmpty :: VFileLine -> Boolean
@@ -87,6 +91,9 @@ export safeRender = where {
   ValidLine(_, x) =>
     Just(x)
 
+  VirtualLine(x) =>
+    Just(x)
+
   _ =>
     Nothing
 }
@@ -95,6 +102,18 @@ export render = pipe(
   safeRender,
   fromMaybe(""),
 )
+
+
+export mapLine = (fn, x) => where {
+  ValidLine(i, j) =>
+    ValidLine(i, fn(j))
+
+  VirtualLine(j) =>
+    VirtualLine(fn(j))
+
+  _ =>
+    x
+}
 
 transformLine :: a -> Integer -> String -> List (Transformer a) -> #[a, String]
 export transformLine = (meta, index, rawLine, trs) => {
