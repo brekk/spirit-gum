@@ -29,7 +29,7 @@ alias NumberedLine = #[Integer, String]
 
 // - a file's path 
 // - a file's raw body
-// - a state which is produced by transforming path and the raw body
+// - a _state which is produced by transforming path and the raw body
 
 export type ConcreteFile state
   = ConcreteFile(
@@ -39,6 +39,19 @@ export type ConcreteFile state
     // the metadata record
     state,
   )
+
+export state = where {
+  ConcreteFile(_, _, s) =>
+    s
+}
+export path = where {
+  ConcreteFile(p, _, _) =>
+    p
+}
+export lines = where {
+  ConcreteFile(_, l, _) =>
+    l
+}
 
 
 export mapState = (f, m) => where(m) {
@@ -64,13 +77,13 @@ export bodyToNumberedLines = pipe(
 )
 
 runBodyValidation :: a -> String -> List (Validator a) -> Boolean
-export runBodyValidation = (state, body, vals) => {
+export runBodyValidation = (_state, body, vals) => {
   validate = (passing, list) => where(list) {
     [] =>
       true
 
     [check, ...z] =>
-      passing && validate(check(state, body), z)
+      passing && validate(check(_state, body), z)
   }
   return pipe(
     List.filter(Validator.isBody),
@@ -80,14 +93,14 @@ export runBodyValidation = (state, body, vals) => {
 }
 
 validateBody :: a -> List (Rule a) -> String -> #[Boolean, String]
-export validateBody = (state, rules, body) => pipe(
+export validateBody = (_state, rules, body) => pipe(
   List.all(
     where {
       Rule.Rule(Rule.BodyAffect, fixable, id, vals, trans) =>
         tapped.vfileV(
           id,
           (success) => success ? "passed!" : "failed",
-          runBodyValidation(state, body, vals),
+          runBodyValidation(_state, body, vals),
         )
 
       _ =>
@@ -98,7 +111,7 @@ export validateBody = (state, rules, body) => pipe(
 )(rules)
 
 processBodyTransformers :: a -> List (Transformer a) -> List NumberedLine -> #[a, List NumberedLine]
-processBodyTransformers = (state, transformers, body) => {
+processBodyTransformers = (_state, transformers, body) => {
   helper :: a -> List NumberedLine -> List (Transformer a) -> #[a, List NumberedLine]
   helper = (newState, numBod, trs) => where(trs) {
     [] =>
@@ -123,11 +136,11 @@ processBodyTransformers = (state, transformers, body) => {
           helper(newState, numBod, rest)
       }
   }
-  return helper(state, body, transformers)
+  return helper(_state, body, transformers)
 }
 
 encodeStateByLine :: a -> List (Rule a) -> List NumberedLine -> #[a, List VFileLine]
-encodeStateByLine = (state, rules, lines) => {
+encodeStateByLine = (_state, rules, _lines) => {
   ruler = pipe(
     tapped.vfileR("loading line rules:", map(Rule.id)),
     Line.processRules,
@@ -142,12 +155,12 @@ encodeStateByLine = (state, rules, lines) => {
           helper(y, remaining, List.append(lineM, processed))
       }
   }
-  return helper(state, lines, [])
+  return helper(_state, _lines, [])
 }
 
 
 modifyBodyByRules :: List (Rule a) -> a -> String -> #[a, List VFileLine]
-export modifyBodyByRules = (rules, state, body) => {
+export modifyBodyByRules = (rules, _state, body) => {
   bodyTransformers = pipe(
     List.filter(Rule.isBody),
     map(tapped.vfileR("loading rule:", Rule.id)),
@@ -155,7 +168,7 @@ export modifyBodyByRules = (rules, state, body) => {
   )(rules)
   return pipe(
     bodyToNumberedLines,
-    processBodyTransformers(state, bodyTransformers),
+    processBodyTransformers(_state, bodyTransformers),
     where {
       #[newState, newBod] =>
         encodeStateByLine(newState, rules, newBod)
@@ -181,8 +194,8 @@ export alias Processor state = String -> List (Rule a) -> a -> String -> Concret
 // this should be trivial for the LineMatcher values
 
 concretizeBody :: Processor a
-export concretizeBody = (src, rules, state, raw) => pipe(
-  modifyBodyByRules(rules, state),
+export concretizeBody = (src, rules, _state, raw) => pipe(
+  modifyBodyByRules(rules, _state),
   where {
     #[newState, ratifiedBod] =>
       ConcreteFile(src, ratifiedBod, newState)
@@ -200,21 +213,21 @@ export type VirtualFile state
   )
 
 cfileWithState :: String -> List (Rule a) -> a -> String -> #[Boolean, ConcreteFile a]
-export cfileWithState = (srcPath, rules, state, rawBod) => pipe(
-  validateBody(state, rules),
+export cfileWithState = (srcPath, rules, _state, rawBod) => pipe(
+  validateBody(_state, rules),
   where {
     #[valid, body] =>
       // we could handle validity here, but Maybes are cumbersome if we don't need them
-      #[valid, concretizeBody(srcPath, rules, state, body)]
+      #[valid, concretizeBody(srcPath, rules, _state, body)]
   },
 )(rawBod)
 
 vfileWithState :: String -> String -> List (Rule a) -> a -> String -> #[Boolean, VirtualFile a]
-export vfileWithState = (vFileName, srcPath, rules, state, rawBod) => pipe(
-  validateBody(state, rules),
+export vfileWithState = (vFileName, srcPath, rules, _state, rawBod) => pipe(
+  validateBody(_state, rules),
   where {
     #[valid, body] =>
-      #[valid, VirtualFile(vFileName, rules, concretizeBody(srcPath, rules, state, body))]
+      #[valid, VirtualFile(vFileName, rules, concretizeBody(srcPath, rules, _state, body))]
   },
 )(rawBod)
 
@@ -223,10 +236,10 @@ export alias VFile a = Wish VFileError (VirtualFile a)
 export alias WishCFile a = Wish VFileError (ConcreteFile a)
 
 vFileFromPath :: String -> String -> List (Rule a) -> a -> VFile a
-export vFileFromPath = (name, src, rules, state) => pipe(
+export vFileFromPath = (name, src, rules, _state) => pipe(
   File.read,
   forceVFileError,
-  map(vfileWithState(name, src, rules, state)),
+  map(vfileWithState(name, src, rules, _state)),
   chain(
     where {
       #[valid, cFile] =>
@@ -240,7 +253,7 @@ export vFileFromPath = (name, src, rules, state) => pipe(
 )(src)
 
 fromPath :: String -> List (Rule a) -> a -> WishCFile a
-export fromPath = (src, rules, state) => Fn.ifElse(
+export fromPath = (src, rules, _state) => Fn.ifElse(
   List.any(Rule.isInvalid),
   pipe(
     List.filter(Rule.isInvalid),
@@ -252,7 +265,7 @@ export fromPath = (src, rules, state) => Fn.ifElse(
   (_rules) => pipe(
     File.read,
     forceVFileError,
-    map(cfileWithState(src, _rules, state)),
+    map(cfileWithState(src, _rules, _state)),
     chain(
       where {
         #[valid, cFile] =>
@@ -266,11 +279,13 @@ export fromPath = (src, rules, state) => Fn.ifElse(
   )(src),
 )(rules)
 
-postTransform :: (String -> List VFileLine -> a -> b) -> WishCFile a -> Wish VFileError b
+export alias ConcreteTransformer a b = String -> List VFileLine -> a -> b
+
+postTransform :: ConcreteTransformer a b -> WishCFile a -> Wish VFileError b
 export postTransform = (fn, wfile) => map(
   where {
-    ConcreteFile(path, lines, state) =>
-      fn(path, lines, state)
+    ConcreteFile(p, _lines, _state) =>
+      fn(p, _lines, _state)
   },
   wfile,
 )

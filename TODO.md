@@ -1,5 +1,8 @@
 - main files
 - write a converter for generating logs for partybus
-- ~entities! - there should be a means of expressing "this entity [starts with this matcher, and ends with this matcher], and I want to capture the lines in between as a structured object (and optionally push that object into state)"~ This was a bad idea
+- ~entities! - there should be a means of expressing "this entity [starts with this matcher, and ends with this matcher], and I want to capture the lines in between as a structured object (and optionally push that object into state)"~ This was a bad idea as we wired it, the entity -> rule transformation was ephemeral
 - ~we should wrap the ConcreteFile so we can map it~ now you can!
 - there should be some means of listing dependencies
+- Macros?
+- some kind of shortcut for wiring that entity idea, but reframed as an explicit line range runtime transformation. so you could add / subtract / transform as a function of rules, and then the final rendering would ...
+- lifecycle events seem like a next logical step

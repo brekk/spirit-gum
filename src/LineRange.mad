@@ -1,0 +1,5 @@
+import type { VFileLine } from "@/Line"
+
+
+
+export type LineRange = LineRange(String, Integer, Integer, List VFileLine)

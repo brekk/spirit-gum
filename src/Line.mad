@@ -34,8 +34,6 @@ instance Comparable VFileLine {
     return _a == _b ? EQ : _a < _b ? LT : GT
   }
 }
-// we need something that allows for accumulation / collapse
-export type LineRange = LineRange(Integer, Integer, List VFileLine)
 
 getLineNumber :: VFileLine -> Integer
 export getLineNumber = where {
@@ -200,7 +198,7 @@ export processRules = (_rules, _state, _lineTuple) => {
           _line,
           _state,
           { failReason: Nothing, done: false, valid: true },
-          List.filter(Rule.isLine, _rules),
+          List.filter(Fn.both(Rule.isLine, Rule.isValid), _rules),
         )
     },
   )(_lineTuple)
