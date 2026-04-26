@@ -114,8 +114,6 @@ export Validator = {
   ofLine: _Validator.ofLine,
   isBody: _Validator.isBody,
   isLine: _Validator.isLine,
-  lineAlwaysValid: _Validator.lineAlwaysValid,
-  bodyAlwaysValid: _Validator.bodyAlwaysValid,
 }
 export type Renderer
 export type FileTemplate
