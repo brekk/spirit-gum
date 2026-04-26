@@ -2,7 +2,7 @@ import type { Maybe } from "Maybe"
 
 import type { VFileError } from "@/Errors"
 import type { Rule } from "@/Rule"
-import type { Transformer } from "@/Rule/Transformer"
+import type { LineTransformer } from "@/Rule/TransformerLine"
 
 import { EQ, GT, LT } from "Compare"
 import Fn from "Function"
@@ -14,7 +14,7 @@ import String from "String"
 import Errors from "@/Errors"
 import { log } from "@/Log"
 import Rule from "@/Rule"
-import Transformer from "@/Rule/Transformer"
+import Transformer from "@/Rule/TransformerLine"
 
 
 
@@ -113,7 +113,7 @@ export mapLine = (fn, x) => where {
     x
 }
 
-transformLine :: a -> Integer -> String -> List (Transformer a) -> #[a, String]
+transformLine :: a -> Integer -> String -> List (LineTransformer a) -> #[a, String]
 export transformLine = (meta, index, rawLine, trs) => {
   helper = (currentLine, state, steps) => where(steps) {
     [] =>
@@ -132,9 +132,6 @@ export transformLine = (meta, index, rawLine, trs) => {
             #[restate, reline] =>
               helper(reline, restate, rest)
           }
-
-        _ =>
-          helper(currentLine, state, rest)
       }
   }
   return helper(rawLine, meta, trs)
@@ -159,14 +156,13 @@ export processRules = (_rules, _state, _lineTuple) => {
   } else {
     where(rules) {
       [] =>
-        // we cannot get here because of the `hasNoRemainingLineRules` clause of the previous branch
+        // we cannot get actually here because of the `hasNoRemainingLineRules` clause of the previous branch
         recurseRules(index, line, state, loopState, [])
 
       [rule, ...rest] =>
         where(rule) {
-          Rule.Rule(Rule.LineAffect, fixable, id, validators, transformers) =>
+          Rule.LineRule(fixable, id, validators, transformers) =>
             do {
-              // TODO: should we capture the id of failing rules here?
               lineValid = List.all(Rule.validateLine(state, index, line), validators)
               valid = loopState.valid && lineValid
               failReason = !lineValid ? Just(Errors.DynamicError(id)) : loopState.failReason
@@ -198,7 +194,7 @@ export processRules = (_rules, _state, _lineTuple) => {
           _line,
           _state,
           { failReason: Nothing, done: false, valid: true },
-          List.filter(Fn.both(Rule.isLine, Rule.isValid), _rules),
+          _rules,
         )
     },
   )(_lineTuple)

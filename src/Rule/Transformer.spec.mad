@@ -1,107 +1,44 @@
 import { report } from "Study"
 
-import Transformer from "@/Rule/Transformer"
+import BTransformer from "@/Rule/TransformerBody"
+import LTransformer from "@/Rule/TransformerLine"
 
 
 
 // meta body
-bodyTrans = Transformer.ofBody((_, body) => body)
+bodyTrans = BTransformer.ofBody((_, body) => body)
 // meta index line
-lineTrans = Transformer.ofLine((_, _, line) => line)
+lineTrans = LTransformer.ofLine((_, _, line) => line)
 // meta numBody
-bodyStateTrans = Transformer.ofBodyState((meta, _) => meta)
+bodyStateTrans = BTransformer.ofBodyState((meta, _) => meta)
 // meta index content
-lineStateTrans = Transformer.ofLineState((meta, _, _) => meta)
+lineStateTrans = LTransformer.ofLineState((meta, _, _) => meta)
 // meta index line
-lineRawTrans = Transformer.ofLineRaw((meta, _, line) => #[meta, line])
+lineRawTrans = LTransformer.ofLineRaw((meta, _, line) => #[meta, line])
 // meta body
-bodyRawTrans = Transformer.ofBodyRaw((meta, body) => #[meta, body])
+bodyRawTrans = BTransformer.ofBodyRaw((meta, body) => #[meta, body])
 
 
 report(
-  Transformer.bodyAffect,
-  "Transformer.bodyAffect",
-  [
-    #[bodyTrans, true],
-    #[lineTrans, false],
-    #[bodyStateTrans, true],
-    #[lineStateTrans, false],
-    #[lineRawTrans, false],
-    #[bodyRawTrans, true],
-  ],
-)
-report(
-  Transformer.isBody,
-  "Transformer.isBody",
-  [
-    #[bodyTrans, true],
-    #[lineTrans, false],
-    #[bodyStateTrans, false],
-    #[lineStateTrans, false],
-    #[lineRawTrans, false],
-    #[bodyRawTrans, false],
-  ],
-)
-report(
-  Transformer.isLine,
-  "Transformer.isLine",
-  [
-    #[bodyTrans, false],
-    #[lineTrans, true],
-    #[bodyStateTrans, false],
-    #[lineStateTrans, false],
-    #[lineRawTrans, false],
-    #[bodyRawTrans, false],
-  ],
-)
-report(
-  Transformer.isBodyState,
-  "Transformer.isBodyState",
-  [
-    #[bodyTrans, false],
-    #[lineTrans, false],
-    #[bodyStateTrans, true],
-    #[lineStateTrans, false],
-    #[lineRawTrans, false],
-    #[bodyRawTrans, false],
-  ],
+  BTransformer.isState,
+  "BodyTransformer.isBodyState",
+  [#[bodyTrans, false], #[bodyStateTrans, true], #[bodyRawTrans, false]],
 )
 
 report(
-  Transformer.isLineState,
-  "Transformer.isLineState",
-  [
-    #[bodyTrans, false],
-    #[lineTrans, false],
-    #[bodyStateTrans, false],
-    #[lineStateTrans, true],
-    #[lineRawTrans, false],
-    #[bodyRawTrans, false],
-  ],
+  LTransformer.isState,
+  "LineTransformer.isState",
+  [#[lineTrans, false], #[lineStateTrans, true], #[lineRawTrans, false]],
 )
 
 report(
-  Transformer.isLineRaw,
-  "Transformer.isLineRaw",
-  [
-    #[bodyTrans, false],
-    #[lineTrans, false],
-    #[bodyStateTrans, false],
-    #[lineStateTrans, false],
-    #[lineRawTrans, true],
-    #[bodyRawTrans, false],
-  ],
+  LTransformer.isRaw,
+  "LineTransformer.isRaw",
+  [#[lineTrans, false], #[lineStateTrans, false], #[lineRawTrans, true]],
 )
 
 report(
-  Transformer.isBodyRaw,
-  "Transformer.isBodyRaw",
-  [
-    #[bodyTrans, false],
-    #[lineTrans, false],
-    #[bodyStateTrans, false],
-    #[lineStateTrans, false],
-    #[lineRawTrans, false],
-    #[bodyRawTrans, true],
-  ],
+  BTransformer.isRaw,
+  "BodyTransformer.isRaw",
+  [#[bodyTrans, false], #[bodyStateTrans, false], #[bodyRawTrans, true]],
 )

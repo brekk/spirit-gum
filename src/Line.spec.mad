@@ -6,7 +6,7 @@ import { caseN3, caseN4, report } from "Study"
 import Errors from "@/Errors"
 import Line from "@/Line"
 import Rule from "@/Rule"
-import Transformer from "@/Rule/Transformer"
+import Transformer from "@/Rule/TransformerLine"
 import Validator from "@/Rule/Validator"
 
 
@@ -109,24 +109,6 @@ testTransformLine(
     #[
       #[{ one: false, two: false }, 100, "line", RULE_TRANSFORM_HARNESS],
       #[{ one: true, two: true }, "line <> line <>"],
-    ],
-  ],
-)
-testTransformLine(
-  "Line.transformLine - body transformers are ignored",
-  [
-    #[
-      #[
-        { one: false, two: false },
-        100,
-        "line",
-        [
-          Transformer.BodyTransformer((_, _) => []),
-          Transformer.BodyStateTransformer((state, _) => ({ ...state, one: true })),
-          Transformer.BodyRawTransformer((state, bod) => #[{ ...state, two: true }, bod]),
-        ],
-      ],
-      #[{ one: false, two: false }, "line"],
     ],
   ],
 )

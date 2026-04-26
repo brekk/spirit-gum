@@ -4,23 +4,6 @@ import SpiritGum from "@/SpiritGum"
 
 
 
-SOURCE = "./src/VFile.mad"
-
-
-
-INITIAL_STATE = { assignments: [], signatures: [], types: [] }
-
-
-BARF = { HEY_HEY: "HEY" }
-
-
 main = () => {
-  IO.pTrace("SPIRIT GUM", SpiritGum.StaticError)
-  // pipe(
-  // VFile.fromPath(SOURCE, [typeSig, types, aliases]),
-  // VFile.postTransform(processSignatures),
-  // map(log.main("processed?!")),
-  // VFile.postTransform(processTypesAndAliases),
-  // Shared.fillfull("Barf!", "Yay!"),
-  // )(INITIAL_STATE)
+  IO.pTrace(SpiritGum.LIBRARY, SpiritGum.VERSION)
 }

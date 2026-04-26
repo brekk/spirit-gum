@@ -281,11 +281,10 @@ export fromPath = (src, rules, _state) => Fn.ifElse(
 
 export alias ConcreteTransformer a b = String -> List VFileLine -> a -> b
 
+export transform = (fn, file) => where(file) {
+  ConcreteFile(p, _lines, _state) =>
+    fn(p, _lines, _state)
+}
+
 postTransform :: ConcreteTransformer a b -> WishCFile a -> Wish VFileError b
-export postTransform = (fn, wfile) => map(
-  where {
-    ConcreteFile(p, _lines, _state) =>
-      fn(p, _lines, _state)
-  },
-  wfile,
-)
+export postTransform = (fn, wfile) => map(transform(fn), wfile)

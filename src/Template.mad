@@ -24,4 +24,5 @@ export renderWithConverter = (lineConverter, renderer, raw) => where(raw) {
     renderer(srcPath, lineConverter(lines), state)
 }
 
+render :: Renderer a -> ConcreteFile a -> String
 export render = renderWithConverter(map(Line.render))

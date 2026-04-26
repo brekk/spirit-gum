@@ -1,0 +1,34 @@
+export alias LineTransformerFunction a = a -> Integer -> String -> String
+export alias LineStateTransformerFunction a = a -> Integer -> String -> a
+export alias LineRawTransformerFunction a = a -> Integer -> String -> #[a, String]
+
+
+export type LineTransformer a
+  = LineTransformer(LineTransformerFunction a)
+  | LineStateTransformer(LineStateTransformerFunction a)
+  | LineRawTransformer(LineRawTransformerFunction a)
+
+export ofLine = LineTransformer
+export ofLineState = LineStateTransformer
+export ofLineRaw = LineRawTransformer
+
+
+
+
+isState :: LineTransformer a -> Boolean
+export isState = where {
+  LineStateTransformer(_) =>
+    true
+
+  _ =>
+    false
+}
+
+isRaw :: LineTransformer a -> Boolean
+export isRaw = where {
+  LineRawTransformer(_) =>
+    true
+
+  _ =>
+    false
+}

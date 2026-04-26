@@ -1,7 +1,8 @@
 import { caseN2, report } from "Study"
 
 import Rule from "@/Rule"
-import Transformer from "@/Rule/Transformer"
+import BTransformer from "@/Rule/TransformerBody"
+import LTransformer from "@/Rule/TransformerLine"
 import Validator from "@/Rule/Validator"
 
 
@@ -9,82 +10,40 @@ import Validator from "@/Rule/Validator"
 bodyVal = Validator.BodyValidator((_, _) => true)
 lineVal = Validator.LineValidator((_, _, _) => true)
 
-HARNESS_VALIDATORS = [bodyVal]
+BODY_VALS = [bodyVal]
+LINE_VALS = [lineVal]
 
-bodyTrans = Transformer.BodyTransformer((_, body) => body)
-HARNESS_TRANSFORMERS = [bodyTrans]
-
-
-HARNESS = Rule.Rule(Rule.BodyAffect, false, "smoke-test", HARNESS_VALIDATORS, HARNESS_TRANSFORMERS)
-HARNESS_BAD_BOD = Rule.bodyRule(false, "smoke-body", [lineVal], [])
-HARNESS_BAD_LINE = Rule.lineRule(false, "smoke-line", [], HARNESS_TRANSFORMERS)
-
-report(
-  Rule.affect,
-  "affect",
-  [
-    #[HARNESS, Rule.BodyAffect],
-    #[HARNESS_BAD_BOD, Rule.BodyAffect],
-    #[HARNESS_BAD_LINE, Rule.LineAffect],
-  ],
-)
-report(
-  Rule.fixable,
-  "fixable",
-  [#[HARNESS, false], #[HARNESS_BAD_BOD, false], #[HARNESS_BAD_LINE, false]],
-)
-report(
-  Rule.id,
-  "id",
-  [
-    #[HARNESS, "smoke-test"],
-    #[HARNESS_BAD_BOD, "Cannot create a body rule with: line validators"],
-    #[HARNESS_BAD_LINE, "Cannot create a line rule with: body transformers"],
-  ],
-)
-report(Rule.validators, "validators", [#[HARNESS, HARNESS_VALIDATORS]])
-report(
-  Rule.transformers,
-  "transformers",
-  [#[HARNESS, HARNESS_TRANSFORMERS], #[HARNESS_BAD_BOD, []], #[HARNESS_BAD_LINE, []]],
-)
-report(
-  Rule.bodyValidators,
-  "bodyValidators",
-  [#[HARNESS, HARNESS_VALIDATORS], #[HARNESS_BAD_BOD, []], #[HARNESS_BAD_LINE, []]],
-)
-report(Rule.lineValidators, "lineValidators", [#[HARNESS, []]])
-report(Validator.isBody, "Validator.isBody", [#[bodyVal, true], #[lineVal, false]])
-
-report(Rule.bodyTransformers, "bodyTransformers", [#[HARNESS, HARNESS_TRANSFORMERS]])
-report(Rule.lineTransformers, "lineTransformers", [#[HARNESS, []]])
-report(Rule.lineRawTransformers, "lineRawTransformers", [#[HARNESS, []]])
-
-report(Rule.lineStateTransformers, "lineStateTransformers", [#[HARNESS, []]])
-report(Rule.bodyStateTransformers, "bodyStateTransformers", [#[HARNESS, []]])
-report(Rule.bodyRawTransformers, "bodyRawTransformers", [#[HARNESS, []]])
+bodyTrans = BTransformer.BodyTransformer((_, body) => body)
+BODY_TRANS = [bodyTrans]
+lineTrans = LTransformer.LineTransformer((_, _, x) => x)
+LINE_TRANS = [lineTrans]
 
 
-report(Rule.isBody, "isBody", [#[HARNESS, true]])
-report(Rule.isLine, "isLine", [#[HARNESS, false]])
+
+BODY_HARNESS = Rule.BodyRule(false, "smoke-test-body", BODY_VALS, BODY_TRANS)
+LINE_HARNESS = Rule.LineRule(false, "smoke-test-line", LINE_VALS, LINE_TRANS)
+
+report(Rule.fixable, "fixable", [#[BODY_HARNESS, false], #[LINE_HARNESS, false]])
+report(Rule.id, "id", [#[BODY_HARNESS, "smoke-test-body"], #[LINE_HARNESS, "smoke-test-line"]])
+report(Rule.bodyValidators, "validators", [#[BODY_HARNESS, BODY_VALS]])
+report(Rule.bodyTransformers, "bodyTransformers", [#[BODY_HARNESS, BODY_TRANS]])
+report(Rule.bodyValidators, "bodyValidators", [#[BODY_HARNESS, BODY_VALS]])
+report(Rule.lineValidators, "lineValidators", [#[LINE_HARNESS, []]])
+
+report(Rule.bodyTransformers, "bodyTransformers", [#[BODY_HARNESS, BODY_TRANS]])
+report(Rule.lineTransformers, "lineTransformers", [#[BODY_HARNESS, []]])
+report(Rule.lineRawTransformers, "lineRawTransformers", [#[BODY_HARNESS, []]])
+
+report(Rule.lineStateTransformers, "lineStateTransformers", [#[BODY_HARNESS, []]])
+report(Rule.bodyStateTransformers, "bodyStateTransformers", [#[BODY_HARNESS, []]])
+report(Rule.bodyRawTransformers, "bodyRawTransformers", [#[BODY_HARNESS, []]])
+
+
+report(Rule.isBody, "isBody", [#[BODY_HARNESS, true]])
+report(Rule.isLine, "isLine", [#[BODY_HARNESS, false]])
 
 report(
   caseN2(Rule.validateLine({ testing: true }, 100)),
   "validateLine",
-  [
-    #[#["this is a whole line of info", lineVal], true],
-    #[#["this is a whole line of info", bodyVal], false],
-  ],
-)
-
-report(
-  Rule.isInvalid,
-  "Rule.isInvalid",
-  [#[HARNESS, false], #[HARNESS_BAD_BOD, true], #[HARNESS_BAD_LINE, true]],
-)
-
-report(
-  Rule.isValid,
-  "Rule.isValid",
-  [#[HARNESS, true], #[HARNESS_BAD_BOD, false], #[HARNESS_BAD_LINE, false]],
+  [#[#["this is a whole line of info", lineVal], true]],
 )

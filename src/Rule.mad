@@ -1,12 +1,14 @@
-import type { Transformer } from "@/Rule/Transformer"
-import type { Validator } from "@/Rule/Validator"
+import type { BodyTransformer } from "@/Rule/TransformerBody"
+import type { LineTransformer } from "@/Rule/TransformerLine"
+import type { BodyValidator, LineValidator } from "@/Rule/Validator"
 
 import Fn from "Function"
 import List from "List"
 import String from "String"
 
 import { log } from "@/Log"
-import Transformer from "@/Rule/Transformer"
+import BTransformer from "@/Rule/TransformerBody"
+import LTransformer from "@/Rule/TransformerLine"
 import Validator from "@/Rule/Validator"
 
 
@@ -23,147 +25,103 @@ export type RuleAffect = BodyAffect | LineAffect
 
 alias Id = String
 
-// we need to eventually make rules "fixable"
-
-
-isLineStr = (yes) => yes ? "line" : "body"
-
-cannot = (yes, v, t) => {
-  a = isLineStr(yes)
-  b = isLineStr(!yes)
-
-  return "Cannot create a "
-    ++ a
-    ++ " rule with: "
-    ++ pipe(
-      List.reject(String.isEmpty),
-      String.join(" or "),
-    )([v ? b ++ " validators" : "", t ? b ++ " transformers" : ""])
-}
-
+// TODO: we need to eventually make rules fixable
 
 
 export type Rule a
-  = Rule(
-    // affect
-    RuleAffect,
+  = LineRule(
     // fixable
     Boolean,
     // id
     Id,
     // validators
-    List (Validator a),
+    List (LineValidator a),
     // transformers
-    List (Transformer a),
+    List (LineTransformer a),
   )
-  | InvalidBodyRule(String)
-  | InvalidLineRule(String)
+  | BodyRule(
+    // fixable
+    Boolean,
+    // id
+    Id,
+    // validators
+    List (BodyValidator a),
+    // transformers
+    List (BodyTransformer a),
+  )
 
-export isInvalid = where {
-  InvalidBodyRule(_) =>
-    true
+export bodyRule = BodyRule
 
-  InvalidLineRule(_) =>
-    true
+export lineRule = LineRule
 
-  _ =>
-    false
-}
-export isValid = Fn.complement(isInvalid)
-
-export create = (aff, fix, _id, vals, trans) => {
-  isBod = aff == BodyAffect
-  return if (isBod) do {
-    lineT = List.any(Transformer.lineAffect, trans)
-    lineV = List.any(Validator.isLine, vals)
-    return if (lineT || lineV) {
-      InvalidBodyRule(cannot(false, lineV, lineT))
-    } else {
-      Rule(aff, fix, _id, vals, trans)
-    }
-  } else do {
-    bodyT = List.any(Transformer.bodyAffect, trans)
-    bodyV = List.any(Validator.isBody, vals)
-    return if (bodyT || bodyV) {
-      InvalidLineRule(cannot(true, bodyV, bodyT))
-    } else {
-      Rule(aff, fix, _id, vals, trans)
-    }
-  }
-}
-
-export bodyRule = create(BodyAffect)
-export lineRule = create(LineAffect)
-
-export affect = where {
-  Rule(x, _, _, _, _) =>
-    x
-
-  InvalidBodyRule(_) =>
-    BodyAffect
-
-  _ =>
-    LineAffect
-}
 export fixable = where {
-  Rule(_, x, _, _, _) =>
+  LineRule(x, _, _, _) =>
     x
 
-  _ =>
-    false
+  BodyRule(x, _, _, _) =>
+    x
 }
 export id = where {
-  Rule(_, _, x, _, _) =>
+  BodyRule(_, x, _, _) =>
     x
 
-  InvalidBodyRule(x) =>
-    x
-
-  InvalidLineRule(x) =>
+  LineRule(_, x, _, _) =>
     x
 }
-export validators = where {
-  Rule(_, _, _, x, _) =>
+export bodyValidators = where {
+  BodyRule(_, _, x, _) =>
     x
 
   _ =>
     []
 }
-export transformers = where {
-  Rule(_, _, _, _, x) =>
+export lineValidators = where {
+  LineRule(_, _, x, _) =>
     x
 
   _ =>
     []
 }
+export bodyTransformers = where {
+  BodyRule(_, _, _, x) =>
+    x
+
+  _ =>
+    []
+}
+export lineTransformers = where {
+  LineRule(_, _, _, x) =>
+    x
+
+  _ =>
+    []
+}
+
+
 select = (fn, filter) => pipe(
   fn,
   List.filter(filter),
 )
 
-export bodyValidators = select(validators, Validator.isBody)
-export lineValidators = select(validators, Validator.isLine)
 
-export bodyTransformers = select(transformers, Transformer.isBody)
-export lineTransformers = select(transformers, Transformer.isLine)
 
-export bodyStateTransformers = select(transformers, Transformer.isBodyState)
-export lineStateTransformers = select(transformers, Transformer.isLineState)
+export bodyStateTransformers = select(bodyTransformers, BTransformer.isState)
+export lineStateTransformers = select(lineTransformers, LTransformer.isState)
 
-export lineRawTransformers = select(transformers, Transformer.isLineRaw)
-export bodyRawTransformers = select(transformers, Transformer.isBodyRaw)
+export lineRawTransformers = select(lineTransformers, LTransformer.isRaw)
+export bodyRawTransformers = select(bodyTransformers, BTransformer.isRaw)
 
-export isBody = pipe(
-  affect,
-  Fn.equals(BodyAffect),
-)
-export isLine = Fn.complement(isBody)
-
-validateLine :: a -> Integer -> String -> Validator a -> Boolean
-export validateLine = (meta, lineNum, currentLine, check) => where(check) {
-  Validator.LineValidator(runner) =>
-    runner(meta, lineNum, currentLine)
+export isBody = where {
+  BodyRule(_, _, _, _) =>
+    true
 
   _ =>
     false
+}
+export isLine = Fn.complement(isBody)
+
+validateLine :: a -> Integer -> String -> LineValidator a -> Boolean
+export validateLine = (meta, lineNum, currentLine, check) => where(check) {
+  Validator.LineValidator(runner) =>
+    runner(meta, lineNum, currentLine)
 }

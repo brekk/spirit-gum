@@ -1,0 +1,35 @@
+alias NumberedLine = #[Integer, String]
+
+export alias BodyTransformerFunction a = a -> List NumberedLine -> List NumberedLine
+export alias BodyStateTransformerFunction a = a -> List NumberedLine -> a
+export alias BodyRawTransformerFunction a = a -> List NumberedLine -> #[a, List NumberedLine]
+
+
+export type BodyTransformer a
+  = BodyTransformer(BodyTransformerFunction a)
+  | BodyStateTransformer(BodyStateTransformerFunction a)
+  | BodyRawTransformer(BodyRawTransformerFunction a)
+
+
+export ofBody = BodyTransformer
+export ofBodyState = BodyStateTransformer
+export ofBodyRaw = BodyRawTransformer
+
+
+isState :: BodyTransformer a -> Boolean
+export isState = where {
+  BodyStateTransformer(_) =>
+    true
+
+  _ =>
+    false
+}
+
+isRaw :: BodyTransformer a -> Boolean
+export isRaw = where {
+  BodyRawTransformer(_) =>
+    true
+
+  _ =>
+    false
+}

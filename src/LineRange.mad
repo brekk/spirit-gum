@@ -2,4 +2,12 @@ import type { VFileLine } from "@/Line"
 
 
 
-export type LineRange = LineRange(String, Integer, Integer, List VFileLine)
+export type Selection
+  = LineSelection(
+    // name
+    String,
+    // range start
+    Integer,
+    // range end
+    Integer,
+  )
