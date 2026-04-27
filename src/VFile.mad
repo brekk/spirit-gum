@@ -4,8 +4,8 @@ import type { Wish } from "Wish"
 import type { VFileError } from "@/Errors"
 import type { VFileLine } from "@/Line"
 import type { Rule } from "@/Rule"
-import type { Transformer } from "@/Rule/Transformer"
-import type { Validator } from "@/Rule/Validator"
+import type { BodyTransformer } from "@/Rule/TransformerBody"
+import type { BodyValidator } from "@/Rule/Validator"
 
 import File from "File"
 import Fn from "Function"
@@ -18,7 +18,7 @@ import Errors from "@/Errors"
 import Line from "@/Line"
 import { log, tapped } from "@/Log"
 import Rule from "@/Rule"
-import Transformer from "@/Rule/Transformer"
+import BodyTransformer from "@/Rule/TransformerBody"
 import Validator from "@/Rule/Validator"
 
 
@@ -76,7 +76,7 @@ export bodyToNumberedLines = pipe(
   List.mapWithIndex((x, i) => #[i, x]),
 )
 
-runBodyValidation :: a -> String -> List (Validator a) -> Boolean
+runBodyValidation :: a -> String -> List (BodyValidator a) -> Boolean
 export runBodyValidation = (_state, body, vals) => {
   validate = (passing, list) => where(list) {
     [] =>
@@ -86,7 +86,6 @@ export runBodyValidation = (_state, body, vals) => {
       passing && validate(check(_state, body), z)
   }
   return pipe(
-    List.filter(Validator.isBody),
     map(where { Validator.BodyValidator(fn) => fn }),
     validate(true),
   )(vals)
@@ -96,7 +95,7 @@ validateBody :: a -> List (Rule a) -> String -> #[Boolean, String]
 export validateBody = (_state, rules, body) => pipe(
   List.all(
     where {
-      Rule.Rule(Rule.BodyAffect, fixable, id, vals, trans) =>
+      Rule.BodyRule(fixable, id, vals, trans) =>
         tapped.vfileV(
           id,
           (success) => success ? "passed!" : "failed",
@@ -110,30 +109,29 @@ export validateBody = (_state, rules, body) => pipe(
   (valid) => #[valid, body],
 )(rules)
 
-processBodyTransformers :: a -> List (Transformer a) -> List NumberedLine -> #[a, List NumberedLine]
+processBodyTransformers :: a
+  -> List (BodyTransformer a)
+  -> List NumberedLine
+  -> #[a, List NumberedLine]
 processBodyTransformers = (_state, transformers, body) => {
-  helper :: a -> List NumberedLine -> List (Transformer a) -> #[a, List NumberedLine]
+  helper :: a -> List NumberedLine -> List (BodyTransformer a) -> #[a, List NumberedLine]
   helper = (newState, numBod, trs) => where(trs) {
     [] =>
       #[newState, numBod]
 
     [a, ...rest] =>
       where(a) {
-        Transformer.BodyTransformer(fn) =>
+        BodyTransformer.BodyTransformer(fn) =>
           helper(newState, fn(newState, numBod), rest)
 
-        Transformer.BodyStateTransformer(fn) =>
+        BodyTransformer.BodyStateTransformer(fn) =>
           helper(fn(newState, numBod), numBod, rest)
 
-        Transformer.BodyRawTransformer(fn) =>
+        BodyTransformer.BodyRawTransformer(fn) =>
           where(fn(newState, numBod)) {
             #[newnewState, bodbod] =>
               helper(newnewState, bodbod, rest)
           }
-
-        _ =>
-          // skip line transformers
-          helper(newState, numBod, rest)
       }
   }
   return helper(_state, body, transformers)
@@ -164,7 +162,7 @@ export modifyBodyByRules = (rules, _state, body) => {
   bodyTransformers = pipe(
     List.filter(Rule.isBody),
     map(tapped.vfileR("loading rule:", Rule.id)),
-    chain(Rule.transformers),
+    chain(Rule.bodyTransformers),
   )(rules)
   return pipe(
     bodyToNumberedLines,
@@ -253,31 +251,21 @@ export vFileFromPath = (name, src, rules, _state) => pipe(
 )(src)
 
 fromPath :: String -> List (Rule a) -> a -> WishCFile a
-export fromPath = (src, rules, _state) => Fn.ifElse(
-  List.any(Rule.isInvalid),
-  pipe(
-    List.filter(Rule.isInvalid),
-    map(Rule.id),
-    String.join(" & "),
-    Errors.DynamicError,
-    Wish.bad,
+export fromPath = (src, rules, _state) => pipe(
+  File.read,
+  forceVFileError,
+  map(cfileWithState(src, rules, _state)),
+  chain(
+    where {
+      #[valid, cFile] =>
+        if (valid) {
+          Wish.good(cFile)
+        } else {
+          Wish.bad(Errors.InvalidShape)
+        }
+    },
   ),
-  (_rules) => pipe(
-    File.read,
-    forceVFileError,
-    map(cfileWithState(src, _rules, _state)),
-    chain(
-      where {
-        #[valid, cFile] =>
-          if (valid) {
-            Wish.good(cFile)
-          } else {
-            Wish.bad(Errors.InvalidShape)
-          }
-      },
-    ),
-  )(src),
-)(rules)
+)(src)
 
 export alias ConcreteTransformer a b = String -> List VFileLine -> a -> b
 

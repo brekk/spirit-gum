@@ -14,7 +14,7 @@ import TypeSig from "./MadLint/TypeSignature"
 import Shared from "@/ExampleUtilities"
 import Line from "@/Line"
 import Rule from "@/Rule"
-import Transformer from "@/Rule/Transformer"
+import LineTransformer from "@/Rule/TransformerLine"
 import VFile from "@/VFile"
 
 
@@ -369,9 +369,12 @@ typeSig = Rule.lineRule(
   false,
   "madlib/type-signature",
   [],
-  [Transformer.ofLineRaw(captureSignatures), Transformer.ofLineRaw(captureAssignmentsAndExports)],
+  [
+    LineTransformer.ofLineRaw(captureSignatures),
+    LineTransformer.ofLineRaw(captureAssignmentsAndExports),
+  ],
 )
-types = Rule.lineRule(false, "madlib/type", [], [Transformer.ofLineRaw(captureTypes)])
-aliases = Rule.lineRule(false, "madlib/type/alias", [], [Transformer.ofLineRaw(captureAliases)])
+types = Rule.lineRule(false, "madlib/type", [], [LineTransformer.ofLineRaw(captureTypes)])
+aliases = Rule.lineRule(false, "madlib/type/alias", [], [LineTransformer.ofLineRaw(captureAliases)])
 
 export RULES = IO.trace("RULES?", [typeSig, types, aliases])

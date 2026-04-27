@@ -12,9 +12,9 @@
       "minVersion": "0.0.4"
     },
     {
-      "url": "https://github.com/brekk/party-bus/archive/refs/tags/v0.0.7.zip",
+      "url": "https://github.com/brekk/party-bus/archive/refs/tags/v0.0.8.zip",
       "description": "PartyBus",
-      "minVersion": "0.0.7"
+      "minVersion": "0.0.8"
     }
   ]
 }

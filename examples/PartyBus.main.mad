@@ -3,7 +3,7 @@ import String from "String"
 import Shared from "@/ExampleUtilities"
 import { log } from "@/Log"
 import Rule from "@/Rule"
-import Transformer from "@/Rule/Transformer"
+import BTransformer from "@/Rule/TransformerBody"
 import Validator from "@/Rule/Validator"
 import VFile from "@/VFile"
 
@@ -21,7 +21,7 @@ main = () => {
         false,
         "party-bus/opinionated-log-pattern",
         [
-          Validator.ofBody(
+          Validator.BodyValidator(
             (_, body) => {
               hasBase = String.contains("export BASE", body)
               hasTags = String.contains("export TAGS", body)
@@ -32,7 +32,7 @@ main = () => {
             },
           ),
         ],
-        [Transformer.BodyStateTransformer((meta, _) => ({ ...meta, opinionated: true }))],
+        [BTransformer.ofBodyState((meta, _) => ({ ...meta, opinionated: true }))],
       ),
     ],
     INITIAL_STATE,

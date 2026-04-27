@@ -13,7 +13,7 @@ import VFile from "@/VFile"
 
 
 SOURCE = "./src/VFile.mad"
-SOURCE2 = "./src/Rule/Transformer.mad"
+SOURCE2 = "./src/Rule/TransformerLine.mad"
 SOURCE3 = "./examples/MadLint/Type.mad"
 
 

@@ -7,7 +7,8 @@ import Shared from "@/ExampleUtilities"
 import Line from "@/Line"
 import { log } from "@/Log"
 import Rule from "@/Rule"
-import Transformer from "@/Rule/Transformer"
+import BTransformer from "@/Rule/TransformerBody"
+import LTransformer from "@/Rule/TransformerLine"
 import Validator from "@/Rule/Validator"
 import Template from "@/Template"
 import VFile from "@/VFile"
@@ -70,31 +71,31 @@ main = () => {
         Rule.bodyRule(
           false,
           "spirit-gum/readme/title",
-          [Validator.ofBody((_, body) => String.contains("^#", body))],
-          [Transformer.ofBodyState((meta, _) => ({ ...meta, hasTitle: true }))],
+          [Validator.BodyValidator((_, body) => String.contains("^#", body))],
+          [BTransformer.ofBodyState((meta, _) => ({ ...meta, hasTitle: true }))],
         ),
         Rule.lineRule(
           true,
           "spirit-gum/readme/headings",
           [],
           [
-            Transformer.ofLine(headingSlug),
-            Transformer.ofLine(linkMadFiles),
-            Transformer.ofLineRaw(grabExports),
+            LTransformer.ofLine(headingSlug),
+            LTransformer.ofLine(linkMadFiles),
+            LTransformer.ofLineRaw(grabExports),
           ],
         ),
         Rule.bodyRule(
           false,
           "spirit-gum/readme/types",
           [
-            Validator.ofBody(
+            Validator.BodyValidator(
               (_, body) => pipe(
                 String.toLower,
                 String.contains("# types"),
               )(body),
             ),
           ],
-          [Transformer.ofBodyState((meta, _) => ({ ...meta, hasTypes: true }))],
+          [BTransformer.ofBodyState((meta, _) => ({ ...meta, hasTypes: true }))],
         ),
       ],
     ),
