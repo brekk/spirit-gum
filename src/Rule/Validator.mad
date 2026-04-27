@@ -1,3 +1,5 @@
-export type BodyValidator a = BodyValidator(a -> String -> Boolean)
+export alias BodyValidatorFunction a = a -> String -> Boolean
+export type BodyValidator a = BodyValidator(BodyValidatorFunction a)
 
-export type LineValidator a = LineValidator(a -> Integer -> String -> Boolean)
+export alias LineValidatorFunction a = a -> Integer -> String -> Boolean
+export type LineValidator a = LineValidator(LineValidatorFunction a)

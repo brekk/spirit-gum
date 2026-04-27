@@ -24,11 +24,17 @@ BODY_HARNESS = Rule.BodyRule(false, "smoke-test-body", BODY_VALS, BODY_TRANS)
 LINE_HARNESS = Rule.LineRule(false, "smoke-test-line", LINE_VALS, LINE_TRANS)
 
 report(Rule.fixable, "fixable", [#[BODY_HARNESS, false], #[LINE_HARNESS, false]])
+
 report(Rule.id, "id", [#[BODY_HARNESS, "smoke-test-body"], #[LINE_HARNESS, "smoke-test-line"]])
+
 report(Rule.bodyValidators, "validators", [#[BODY_HARNESS, BODY_VALS]])
+
 report(Rule.bodyTransformers, "bodyTransformers", [#[BODY_HARNESS, BODY_TRANS]])
+
 report(Rule.bodyValidators, "bodyValidators", [#[BODY_HARNESS, BODY_VALS]])
-report(Rule.lineValidators, "lineValidators", [#[LINE_HARNESS, []]])
+
+report(Rule.lineValidators, "lineValidators", [#[LINE_HARNESS, LINE_VALS]])
+
 
 report(Rule.bodyTransformers, "bodyTransformers", [#[BODY_HARNESS, BODY_TRANS]])
 report(Rule.lineTransformers, "lineTransformers", [#[BODY_HARNESS, []]])

@@ -1,3 +1,5 @@
+import type { Maybe } from "Maybe"
+
 import type { VFileLine } from "@/Line"
 
 
@@ -11,3 +13,35 @@ export type Selection
     // range end
     Integer,
   )
+
+export name = where {
+  LineSelection(n, _, _) =>
+    n
+}
+
+export start = where {
+  LineSelection(_, s, _) =>
+    s
+}
+export setStart = (s, x) => where(x) {
+  LineSelection(i, _, e) =>
+    LineSelection(i, s, e)
+}
+export end = where {
+  LineSelection(_, _, e) =>
+    e
+}
+export setEnd = (e, x) => where(x) {
+  LineSelection(i, s, _) =>
+    LineSelection(i, s, e)
+}
+export isDefinite = where {
+  LineSelection(_, s, e) =>
+    s > 0 && e > 0
+}
+export set = (t, x) => where(#[t, x]) {
+  #[#[a, z], LineSelection(i, _, _)] =>
+    LineSelection(i, a, z)
+}
+
+export hypothetical = LineSelection($, -1, -1)
