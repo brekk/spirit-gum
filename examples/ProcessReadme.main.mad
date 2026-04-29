@@ -3,7 +3,8 @@ import Fn from "Function"
 import List from "List"
 import String from "String"
 
-// import MadlibJson from "mad-at-json/Parse/MadlibJson"
+import MadlibJson from "mad-at-json/Parse/MadlibJson"
+import Version from "mad-at-json/Version"
 
 import Shared from "@/ExampleUtilities"
 import Line from "@/Line"
@@ -79,27 +80,34 @@ lineMatchTransformer = (toMatch, replacer) => LTransformer.ofLineRaw(
     return #[meta, hasBadge ? replacer(meta, index, line) : line]
   },
 )
-/*
 madlibJson = pipe(
   File.read,
-  map(
+  VFile.forceVFileError,
+  chain(
     pipe(
       log.base("read from"),
       MadlibJson.parse,
+      VFile.forceVFileError,
     ),
   ),
 )("./madlib.json")
-*/
+
+madlibVersion = (version) => `![spirit-gum v${version}](https://img.shields.io/badge/v${
+  version
+}-purple?label=version&link=github.com%2Fbrekk%2Fspirit-gum)`
 
 rules = {
   magicBadge: Rule.lineRule(
     false,
     "spirit-gum/readme/magic-madlib-badge",
     [],
-    [
-      lineMatchTransformer(CONSTANTS.MADLIB_BADGE, (_, _, _) => MADLIB_PROJECT),
-    // lineMatchTransformer(CONSTANTS.MADLIB_VERSION, (_, _, _) => MADLIB_PROJECT),
-    ],
+    [lineMatchTransformer(CONSTANTS.MADLIB_BADGE, (_, _, _) => MADLIB_PROJECT)],
+  ),
+  magicVersion: (v) => Rule.lineRule(
+    false,
+    "spirit-gum/readme/madlib-version",
+    [],
+    [lineMatchTransformer(CONSTANTS.VERSION, (_, _, _) => madlibVersion(v))],
   ),
   title: Rule.bodyRule(
     false,
@@ -132,23 +140,47 @@ rules = {
   ),
 }
 
+applySpiritGumWithRules = (version) => pipe(
+  VFile.fromPath(
+    SOURCE,
+    [rules.magicBadge, rules.magicVersion(version), rules.title, rules.headings, rules.types],
+  ),
+  VFile.forceVFileError,
+  map(
+    pipe(
+      log.main("processed raw"),
+      Template.renderWithConverter(map(Line.render), (_, lines, _) => String.unlines(lines)),
+      log.main("converted"),
+    ),
+  ),
+  chain(
+    pipe(
+      File.write("./README.md"),
+      VFile.forceVFileError,
+      map(Fn.always("Updated README!")),
+    ),
+  ),
+)(INITIAL_STATE)
+/*
+chain(
+  map(
+    pipe(
+      .version,
+      applySpiritGumWithRules,
+    ),
+  ),
+),
+
+*/
 main = () => {
   pipe(
-    VFile.fromPath(SOURCE, [rules.magicBadge, rules.title, rules.headings, rules.types]),
     map(
       pipe(
-        log.main("processed raw"),
-        Template.renderWithConverter(map(Line.render), (_, lines, _) => String.unlines(lines)),
-        log.main("converted"),
+        .version,
+        Version.showVersion,
       ),
     ),
-    chain(
-      pipe(
-        File.write("./README.md"),
-        VFile.forceVFileError,
-        map(Fn.always("Updated README!")),
-      ),
-    ),
+    chain(applySpiritGumWithRules),
     Shared.fillfull("Barf!", "Yay!"),
-  )(INITIAL_STATE)
+  )(madlibJson)
 }

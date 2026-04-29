@@ -18,6 +18,7 @@ export E = {
 tag = Party.tagWithScope(BASE)
 
 export TAGS = {
+  base: Party.tag(BASE),
   vfile: tag([E.VFILE]),
   vfileV: tag([E.VFILE, E.VALIDATOR]),
   vfileT: tag([E.VFILE, E.TRANSFORMER]),
@@ -40,6 +41,7 @@ export TAGS = {
 env = Party.env
 
 export log = {
+  base: env(TAGS.base),
   vfile: env(TAGS.vfile),
   vfileV: env(TAGS.vfileV),
   vfileT: env(TAGS.vfileT),
@@ -58,11 +60,14 @@ export log = {
   entity: env(TAGS.entity),
 }
 
+/*
 tap :: (String -> b -> b) -> String -> (a -> b) -> a -> a
 export tap = (spout, msg, taproot, x) => {
   spout(msg, taproot(x))
   return x
 }
+*/
+tap = Party.tap
 
 export tapped = {
   vfile: tap(log.vfile),

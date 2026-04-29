@@ -3,7 +3,7 @@
 fugacious files in madlib
 
 ![Madlib Project Badge](https://img.shields.io/badge/madlib-project?logo=github&logoSize=auto&color=purple&link=github.com%2Fmadlib-lang%2Fmadlib)
-<!-- $MADLIB.json.version -->
+![spirit-gum v0.2.0](https://img.shields.io/badge/v0.2.0-purple?label=version&link=github.com%2Fbrekk%2Fspirit-gum)
 
 ## Types
 
