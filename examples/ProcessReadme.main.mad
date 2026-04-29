@@ -69,7 +69,7 @@ grabExports = (meta, _, line) => Fn.ifElse(
   Fn.always(#[meta, line]),
 )(line)
 
-MADLIB_PROJECT = "![Madlib Project Badge](https://img.shields.io/badge/madlib-project?logo=github&logoSize=auto&color=purple&link=github.com%2Fmadlib-lang%2Fmadlib)"
+MADLIB_PROJECT = "[![Madlib Project Badge](https://img.shields.io/badge/madlib-project?logo=github&logoSize=auto&color=purple)](//github.com/madlib-lang/madlib)"
 import IO from "IO"
 
 
@@ -92,9 +92,9 @@ madlibJson = pipe(
   ),
 )("./madlib.json")
 
-madlibVersion = (version) => `![spirit-gum v${version}](https://img.shields.io/badge/v${
+madlibVersion = (version) => `[![spirit-gum v${version}](https://img.shields.io/badge/v${
   version
-}-purple?label=version&link=github.com%2Fbrekk%2Fspirit-gum)`
+}-purple?label=version)](//github.com/brekk/spirit-gum)`
 
 rules = {
   magicBadge: Rule.lineRule(

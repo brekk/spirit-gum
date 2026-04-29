@@ -2,8 +2,8 @@
 
 fugacious files in madlib
 
-![Madlib Project Badge](https://img.shields.io/badge/madlib-project?logo=github&logoSize=auto&color=purple&link=github.com%2Fmadlib-lang%2Fmadlib)
-![spirit-gum v0.2.1](https://img.shields.io/badge/v0.2.1-purple?label=version&link=github.com%2Fbrekk%2Fspirit-gum)
+[![Madlib Project Badge](https://img.shields.io/badge/madlib-project?logo=github&logoSize=auto&color=purple)](//github.com/madlib-lang/madlib)
+[![spirit-gum v0.2.1](https://img.shields.io/badge/v0.2.1-purple?label=version)](//github.com/brekk/spirit-gum)
 
 ## Types
 
