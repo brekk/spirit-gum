@@ -1,0 +1,24 @@
+{
+  "buildHash": "2cd75da879650cb1d738d02d6baf09af",
+  "jsApi": {
+    "apiInstances": [],
+    "apiAliases": {},
+    "apiInterfaces": {},
+    "apiNames": {
+      "LIBRARY": "String",
+      "VERSION": "String"
+    },
+    "apiTypes": {}
+  },
+  "llvmApi": {
+    "apiInstances": [],
+    "apiAliases": {},
+    "apiInterfaces": {},
+    "apiNames": {
+      "LIBRARY": "String",
+      "VERSION": "String"
+    },
+    "apiTypes": {}
+  },
+  "versionHash": "25e64aa754c310d45c1e084d574c1bb0"
+}
