@@ -2,6 +2,9 @@
 
 fugacious files in madlib
 
+<!-- $MADLIB.projectBadge -->
+<!-- $MADLIB.json.version -->
+
 ## types
 
 * Errors.mad

@@ -17,6 +17,11 @@ import VFile from "@/VFile"
 
 SOURCE = "./examples/unprocessed-readme.md"
 INITIAL_STATE = { hasTitle: false, hasTypes: false, types: [], constructors: [] }
+CONSTANTS = { MADLIB_BADGE: "\\$MADLIB\\.projectBadge", VERSION: "\\$MADLIB\\.json\\.version" }
+
+
+// ![Madlib Project Badge](https://img.shields.io/badge/madlib-project?logo=github&logoSize=auto&color=purple&link=github.com%2Fmadlib-lang%2Fmadlib)
+// ![Project Version](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fbrekk%2Fspirit-gum%2Frefs%2Fheads%2Fmain%2Fmadlib.json&query=%24.version&label=version&link=https%3A%2F%2Fraw.githubusercontent.com%2Fbrekk%2Fspirit-gum%2Frefs%2Fheads%2Fmain%2Fmadlib.json)
 
 slug = pipe(
   String.toLower,
@@ -61,13 +66,42 @@ grabExports = (meta, _, line) => Fn.ifElse(
   Fn.always(#[meta, line]),
 )(line)
 
+MADLIB_PROJECT = "![Madlib Project Badge](https://img.shields.io/badge/madlib-project?logo=github&logoSize=auto&color=purple&link=github.com%2Fmadlib-lang%2Fmadlib)"
+import IO from "IO"
 
+
+
+lineMatchTransformer = (toMatch, replacer) => LTransformer.ofLineRaw(
+  (meta, index, line) => {
+    hasBadge = String.match(toMatch, line)
+    return #[meta, hasBadge ? replacer(meta, index, line) : line]
+  },
+)
+
+madlibJson = pipe(
+  File.read,
+  map(
+    pipe(
+      log.base("read from"),
+      MadlibJson.parse,
+    ),
+  ),
+)("./madlib.json")
 
 main = () => {
   pipe(
     VFile.fromPath(
       SOURCE,
       [
+        Rule.lineRule(
+          false,
+          "spirit-gum/readme/magic-madlib-badge",
+          [],
+          [
+            lineMatchTransformer(CONSTANTS.MADLIB_BADGE, (_, _, _) => MADLIB_PROJECT),
+            lineMatchTransformer(CONSTANTS.MADLIB_BADGE, (_, _, _) => MADLIB_PROJECT),
+          ],
+        ),
         Rule.bodyRule(
           false,
           "spirit-gum/readme/title",

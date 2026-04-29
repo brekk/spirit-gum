@@ -1,0 +1,120 @@
+import type { VFileError } from "@/Errors"
+import type { VFileLine } from "@/Line"
+import type {
+  BodyRawTransformerFunction,
+  BodyStateTransformerFunction,
+  BodyTransformerFunction,
+} from "@/Rule/TransformerBody"
+import type {
+  LineRawTransformerFunction,
+  LineStateTransformerFunction,
+  LineTransformerFunction,
+} from "@/Rule/TransformerLine"
+import type { BodyValidator, LineValidator } from "@/Rule/Validator"
+import type { FileTemplate, Renderer } from "@/Template"
+import type { ConcreteFile, Processor, VFile, VirtualFile, WishCFile } from "@/VFile"
+
+import {
+  DynamicError,
+  InvalidShape,
+  InvalidSource,
+  StaticError,
+  VFInvalidShape,
+  VFInvalidSource,
+} from "@/Errors"
+import _Line from "@/Line"
+import _Rule from "@/Rule"
+import BTransformer from "@/Rule/TransformerBody"
+import LTransformer from "@/Rule/TransformerLine"
+import _Validator from "@/Rule/Validator"
+import _Template from "@/Template"
+import _VFile from "@/VFile"
+
+
+
+// export type FileError = KnownVFileErrorKind
+
+// export ERRORS
+export type VFileError
+
+export type VFileLine
+
+export InvalidLine = _Line.InvalidLine
+export ValidLine = _Line.ValidLine
+export EmptyLine = _Line.EmptyLine
+export Line = {
+  getLineNumber: _Line.getLineNumber,
+  isEmpty: _Line.isEmpty,
+  isValid: _Line.isValid,
+  isInvalid: _Line.isInvalid,
+  safeRender: _Line.safeRender,
+  render: _Line.render,
+  transformLine: _Line.transformLine,
+  processRules: _Line.processRules,
+}
+
+export Rule = {
+  bodyRule: _Rule.bodyRule,
+  lineRule: _Rule.lineRule,
+  fixable: _Rule.fixable,
+  id: _Rule.id,
+  bodyValidators: _Rule.bodyValidators,
+  lineValidators: _Rule.lineValidators,
+  bodyTransformers: _Rule.bodyTransformers,
+  lineTransformers: _Rule.lineTransformers,
+  bodyStateTransformers: _Rule.bodyStateTransformers,
+  lineStateTransformers: _Rule.lineStateTransformers,
+  lineRawTransformers: _Rule.lineRawTransformers,
+  bodyRawTransformers: _Rule.bodyRawTransformers,
+  isBody: _Rule.isBody,
+  isLine: _Rule.isLine,
+  validateLine: _Rule.validateLine,
+}
+
+
+export type BodyTransformerFunction
+export type BodyStateTransformerFunction
+export type BodyRawTransformerFunction
+export type LineTransformerFunction
+export type LineStateTransformerFunction
+export type LineRawTransformerFunction
+
+export BodyTransformer = BTransformer.BodyTransformer
+export BodyStateTransformer = BTransformer.BodyStateTransformer
+export BodyRawTransformer = BTransformer.BodyRawTransformer
+export LineTransformer = LTransformer.LineTransformer
+export LineStateTransformer = LTransformer.LineStateTransformer
+export LineRawTransformer = LTransformer.LineRawTransformer
+
+export type Renderer
+export type FileTemplate
+
+export FileTemplate = _Template.FileTemplate
+export Template = { renderWithConverter: _Template.renderWithConverter, render: _Template.render }
+
+export type Processor
+export type VirtualFile
+export type ConcreteFile
+export ConcreteFile = _VFile.ConcreteFile
+export type VFile
+export type WishCFile
+export VFile = {
+  mapState: _VFile.mapState,
+  mapLines: _VFile.mapLines,
+  forceVFileError: _VFile.forceVFileError,
+  bodyToNumberedLines: _VFile.bodyToNumberedLines,
+  runBodyValidation: _VFile.runBodyValidation,
+  validateBody: _VFile.validateBody,
+  modifyBodyByRules: _VFile.modifyBodyByRules,
+  concretizeBody: _VFile.concretizeBody,
+  cfileWithState: _VFile.cfileWithState,
+  vfileWithState: _VFile.vfileWithState,
+  fromPath: _VFile.fromPath,
+  postTransform: _VFile.postTransform,
+}
+
+import { assertEquals, test } from "Test"
+
+
+
+test("regressin' testin'", () => assertEquals(true, true))

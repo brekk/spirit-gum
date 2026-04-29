@@ -2,6 +2,9 @@
 
 fugacious files in madlib
 
+![Madlib Project Badge](https://img.shields.io/badge/madlib-project?logo=github&logoSize=auto&color=purple&link=github.com%2Fmadlib-lang%2Fmadlib)
+<!-- $MADLIB.json.version -->
+
 ## Types
 
 * [Errors.mad](//github.com/brekk/spirit-gum/blob/main/src/Errors.mad)
