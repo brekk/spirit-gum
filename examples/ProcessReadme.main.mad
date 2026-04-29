@@ -3,6 +3,8 @@ import Fn from "Function"
 import List from "List"
 import String from "String"
 
+// import MadlibJson from "mad-at-json/Parse/MadlibJson"
+
 import Shared from "@/ExampleUtilities"
 import Line from "@/Line"
 import { log } from "@/Log"
@@ -77,7 +79,7 @@ lineMatchTransformer = (toMatch, replacer) => LTransformer.ofLineRaw(
     return #[meta, hasBadge ? replacer(meta, index, line) : line]
   },
 )
-
+/*
 madlibJson = pipe(
   File.read,
   map(
@@ -87,52 +89,52 @@ madlibJson = pipe(
     ),
   ),
 )("./madlib.json")
+*/
+
+rules = {
+  magicBadge: Rule.lineRule(
+    false,
+    "spirit-gum/readme/magic-madlib-badge",
+    [],
+    [
+      lineMatchTransformer(CONSTANTS.MADLIB_BADGE, (_, _, _) => MADLIB_PROJECT),
+    // lineMatchTransformer(CONSTANTS.MADLIB_VERSION, (_, _, _) => MADLIB_PROJECT),
+    ],
+  ),
+  title: Rule.bodyRule(
+    false,
+    "spirit-gum/readme/title",
+    [Validator.BodyValidator((_, body) => String.contains("^#", body))],
+    [BTransformer.ofBodyState((meta, _) => ({ ...meta, hasTitle: true }))],
+  ),
+  headings: Rule.lineRule(
+    true,
+    "spirit-gum/readme/headings",
+    [],
+    [
+      LTransformer.ofLine(headingSlug),
+      LTransformer.ofLine(linkMadFiles),
+      LTransformer.ofLineRaw(grabExports),
+    ],
+  ),
+  types: Rule.bodyRule(
+    false,
+    "spirit-gum/readme/types",
+    [
+      Validator.BodyValidator(
+        (_, body) => pipe(
+          String.toLower,
+          String.contains("# types"),
+        )(body),
+      ),
+    ],
+    [BTransformer.ofBodyState((meta, _) => ({ ...meta, hasTypes: true }))],
+  ),
+}
 
 main = () => {
   pipe(
-    VFile.fromPath(
-      SOURCE,
-      [
-        Rule.lineRule(
-          false,
-          "spirit-gum/readme/magic-madlib-badge",
-          [],
-          [
-            lineMatchTransformer(CONSTANTS.MADLIB_BADGE, (_, _, _) => MADLIB_PROJECT),
-            lineMatchTransformer(CONSTANTS.MADLIB_BADGE, (_, _, _) => MADLIB_PROJECT),
-          ],
-        ),
-        Rule.bodyRule(
-          false,
-          "spirit-gum/readme/title",
-          [Validator.BodyValidator((_, body) => String.contains("^#", body))],
-          [BTransformer.ofBodyState((meta, _) => ({ ...meta, hasTitle: true }))],
-        ),
-        Rule.lineRule(
-          true,
-          "spirit-gum/readme/headings",
-          [],
-          [
-            LTransformer.ofLine(headingSlug),
-            LTransformer.ofLine(linkMadFiles),
-            LTransformer.ofLineRaw(grabExports),
-          ],
-        ),
-        Rule.bodyRule(
-          false,
-          "spirit-gum/readme/types",
-          [
-            Validator.BodyValidator(
-              (_, body) => pipe(
-                String.toLower,
-                String.contains("# types"),
-              )(body),
-            ),
-          ],
-          [BTransformer.ofBodyState((meta, _) => ({ ...meta, hasTypes: true }))],
-        ),
-      ],
-    ),
+    VFile.fromPath(SOURCE, [rules.magicBadge, rules.title, rules.headings, rules.types]),
     map(
       pipe(
         log.main("processed raw"),

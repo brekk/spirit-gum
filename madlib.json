@@ -7,7 +7,7 @@
   },
   "dependencies": [
     {
-      "url": "https://github.com/brekk/study/archive/refs/tags/v0.0.1.zip",
+      "url": "https://github.com/brekk/mad-at-json/archive/refs/tags/v0.0.1.zip",
       "description": "mad-at-json",
       "minVersion": "0.0.1"
     },
