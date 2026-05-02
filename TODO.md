@@ -6,3 +6,4 @@
 - Macros?
 - some kind of shortcut for wiring that entity idea, but reframed as an explicit line range runtime transformation. so you could add / subtract / transform as a function of rules, and then the final rendering would ...
 - lifecycle events seem like a next logical step
+- there should be some kind of hook for idempotency signaling or validating -- in `pilcrow` we're writing those and getting that just right is tricky, there should be a test that calling the runner a few times in a row doesn't recursively expand things

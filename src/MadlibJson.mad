@@ -1,0 +1,27 @@
+import type { Wish } from "Wish"
+
+import type { MadlibDotJson } from "mad-at-json/Parse/MadlibJson"
+
+import type { VFileError } from "@/Errors"
+
+import File from "File"
+
+import MadlibJson from "mad-at-json/Parse/MadlibJson"
+
+import VFile from "@/VFile"
+
+
+
+export alias MadlibDotWish = Wish VFileError MadlibDotJson
+
+read :: String -> MadlibDotWish
+export read = pipe(
+  File.read,
+  VFile.forceVFileError,
+  chain(
+    pipe(
+      MadlibJson.parse,
+      VFile.forceVFileError,
+    ),
+  ),
+)
