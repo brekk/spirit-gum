@@ -3,12 +3,12 @@ import Fn from "Function"
 import List from "List"
 import String from "String"
 
-import MadlibJson from "mad-at-json/Parse/MadlibJson"
 import Version from "mad-at-json/Version"
 
 import Shared from "@/ExampleUtilities"
 import Line from "@/Line"
 import { log } from "@/Log"
+import MadlibJson from "@/MadlibJson"
 import Rule from "@/Rule"
 import BTransformer from "@/Rule/TransformerBody"
 import LTransformer from "@/Rule/TransformerLine"
@@ -18,11 +18,14 @@ import VFile from "@/VFile"
 
 
 
+////////////////////////////////////////////////////////////////////////////////////////////////
+// THIS IS AN EXAMPLE USAGE                                                                   //
+// See https://github.com/brekk/pilcrow for a much more comprehensive version of this attempt //
+////////////////////////////////////////////////////////////////////////////////////////////////
+
 SOURCE = "./examples/unprocessed-readme.md"
 INITIAL_STATE = { hasTitle: false, hasTypes: false, types: [], constructors: [] }
 CONSTANTS = { MADLIB_BADGE: "\\$MADLIB\\.projectBadge", VERSION: "\\$MADLIB\\.json\\.version" }
-
-
 // ![Madlib Project Badge](https://img.shields.io/badge/madlib-project?logo=github&logoSize=auto&color=purple&link=github.com%2Fmadlib-lang%2Fmadlib)
 // ![Project Version](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fraw.githubusercontent.com%2Fbrekk%2Fspirit-gum%2Frefs%2Fheads%2Fmain%2Fmadlib.json&query=%24.version&label=version&link=https%3A%2F%2Fraw.githubusercontent.com%2Fbrekk%2Fspirit-gum%2Frefs%2Fheads%2Fmain%2Fmadlib.json)
 
@@ -32,7 +35,6 @@ slug = pipe(
   String.trim,
   String.replace(Shared.REGEX.NON_WORD_AND_SPACES, " "),
 )
-
 headingSlug = (_, _, line) => {
   // don't apply to top-level headings
   isNotFirstHeading = Fn.both(String.startsWith("##"), String.startsWith("#"), line)
@@ -52,10 +54,7 @@ headingSlug = (_, _, line) => {
     : line
   return clean
 }
-
-
 linkMadFiles = Shared.linkMadFilesToGithub("/brekk/spirit-gum/blob/main")
-
 grabExports = (meta, _, line) => Fn.ifElse(
   String.match(Shared.REGEX.CAPTURING.LIST_ITEM),
   pipe(
@@ -68,7 +67,6 @@ grabExports = (meta, _, line) => Fn.ifElse(
   ),
   Fn.always(#[meta, line]),
 )(line)
-
 MADLIB_PROJECT = "[![Madlib Project Badge](https://img.shields.io/badge/madlib-purple?logo=github&logoSize=auto)](//github.com/madlib-lang/madlib)"
 import IO from "IO"
 
@@ -80,22 +78,10 @@ lineMatchTransformer = (toMatch, replacer) => LTransformer.ofLineRaw(
     return #[meta, hasBadge ? replacer(meta, index, line) : line]
   },
 )
-madlibJson = pipe(
-  File.read,
-  VFile.forceVFileError,
-  chain(
-    pipe(
-      log.base("read from"),
-      MadlibJson.parse,
-      VFile.forceVFileError,
-    ),
-  ),
-)("./madlib.json")
-
+madlibJson = MadlibJson.read("./madlib.json")
 madlibVersion = (version) => `[![spirit-gum v${version}](https://img.shields.io/badge/v${
   version
 }-purple?label=version)](//github.com/brekk/spirit-gum)`
-
 rules = {
   magicBadge: Rule.lineRule(
     false,
@@ -139,7 +125,6 @@ rules = {
     [BTransformer.ofBodyState((meta, _) => ({ ...meta, hasTypes: true }))],
   ),
 }
-
 applySpiritGumWithRules = (version) => pipe(
   VFile.fromPath(
     SOURCE,
@@ -161,17 +146,6 @@ applySpiritGumWithRules = (version) => pipe(
     ),
   ),
 )(INITIAL_STATE)
-/*
-chain(
-  map(
-    pipe(
-      .version,
-      applySpiritGumWithRules,
-    ),
-  ),
-),
-
-*/
 main = () => {
   pipe(
     map(
