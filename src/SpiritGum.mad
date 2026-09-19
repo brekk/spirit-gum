@@ -1,2 +1,2 @@
 export LIBRARY = "spirit-gum"
-export VERSION = "0.2.2"
+export VERSION = "0.2.3"
