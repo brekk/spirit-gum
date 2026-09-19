@@ -3,6 +3,7 @@ import Party from "PartyBus"
 
 
 
+// we should eventually use clowncar when it can handle this case
 export BASE = "spirit-gum"
 export E = {
   VFILE: "vfile",
@@ -14,9 +15,7 @@ export E = {
   RAW: "raw",
   ENTITY: "entity",
 }
-
 tag = Party.tagWithScope(BASE)
-
 export TAGS = {
   base: Party.tag(BASE),
   vfile: tag([E.VFILE]),
@@ -36,10 +35,8 @@ export TAGS = {
   lineTRaw: tag([E.LINE, E.TRANSFORMER, E.RAW]),
   entity: tag([E.ENTITY]),
 }
-
 // { env } = Party
 env = Party.env
-
 export log = {
   base: env(TAGS.base),
   vfile: env(TAGS.vfile),
@@ -59,7 +56,6 @@ export log = {
   lineTRaw: env(TAGS.lineTRaw),
   entity: env(TAGS.entity),
 }
-
 /*
 tap :: (String -> b -> b) -> String -> (a -> b) -> a -> a
 export tap = (spout, msg, taproot, x) => {
@@ -67,8 +63,7 @@ export tap = (spout, msg, taproot, x) => {
   return x
 }
 */
-tap = Party.tap
-
+export tap = Party.tap
 export tapped = {
   vfile: tap(log.vfile),
   vfileV: tap(log.vfileV),
